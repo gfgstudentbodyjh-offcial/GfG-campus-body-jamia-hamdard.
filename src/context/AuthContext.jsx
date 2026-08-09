@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const res = await api.get('/auth/me');
+        const res = await cacheService.dedupe('auth_me', () => api.get('/auth/me'));
         if (res.data.success || res.data.user) {
           setUser(res.data.user);
           setMember(res.data.member || null);

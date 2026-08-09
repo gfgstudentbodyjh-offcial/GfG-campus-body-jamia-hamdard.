@@ -95,13 +95,20 @@ const FALLBACK_MAP = {
   })
 };
 
-// ─── Response Interceptor: Auto-fallback to dummy data on error ─────────────────
+// ─── Response Interceptor: Auto-fallback to dummy data on offline/network errors ──
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const config = error.config;
+    const status = error.response?.status;
 
-    // Only apply fallback for GET requests
+    // Do NOT treat 4xx status codes (401, 403, 404, 422) as network failures.
+    // Allow the caller to handle authentic 4xx status codes.
+    if (status && status >= 400 && status < 500) {
+      return Promise.reject(error);
+    }
+
+    // Only apply fallback for GET requests when backend is offline or returning 5xx errors
     if (config && config.method === 'get') {
       const rawUrl = config.url || '';
       // Strip base domain and optional /api prefix for matching

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 
@@ -16,27 +16,35 @@ import LeaderboardPage from './pages/public/LeaderboardPage';
 import ProfilePage from './pages/public/ProfilePage';
 import MemberVerificationPage from './pages/public/MemberVerificationPage';
 
-// Admin Pages & Protected Layout
+// Admin Pages & Protected Layout (Lazy Loaded to minimize public bundle size)
 import ProtectedRoute from './components/common/ProtectedRoute';
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminLayout from './pages/admin/AdminLayout';
-import AdminDashboardHome from './pages/admin/AdminDashboardHome';
-import MembersAdmin from './pages/admin/MembersAdmin';
-import TeamsAdmin from './pages/admin/TeamsAdmin';
-import FacultyAdmin from './pages/admin/FacultyAdmin';
-import MantriAdmin from './pages/admin/MantriAdmin';
-import EventsAdmin from './pages/admin/EventsAdmin';
-import GalleryAdmin from './pages/admin/GalleryAdmin';
-import ResourcesAdmin from './pages/admin/ResourcesAdmin';
-import AnnouncementsAdmin from './pages/admin/AnnouncementsAdmin';
-import FormsAdmin from './pages/admin/FormsAdmin';
-import MediaLibraryAdmin from './pages/admin/MediaLibraryAdmin';
-import HeroSettingsAdmin from './pages/admin/HeroSettingsAdmin';
-import AnalyticsSettingsAdmin from './pages/admin/AnalyticsSettingsAdmin';
-import FeedModerationAdmin from './pages/admin/FeedModerationAdmin';
-import AdministratorsAdmin from './pages/admin/AdministratorsAdmin';
-import UserDirectoryAdmin from './pages/admin/UserDirectoryAdmin';
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
+const AdminDashboardHome = lazy(() => import('./pages/admin/AdminDashboardHome'));
+const MembersAdmin = lazy(() => import('./pages/admin/MembersAdmin'));
+const TeamsAdmin = lazy(() => import('./pages/admin/TeamsAdmin'));
+const FacultyAdmin = lazy(() => import('./pages/admin/FacultyAdmin'));
+const MantriAdmin = lazy(() => import('./pages/admin/MantriAdmin'));
+const EventsAdmin = lazy(() => import('./pages/admin/EventsAdmin'));
+const GalleryAdmin = lazy(() => import('./pages/admin/GalleryAdmin'));
+const ResourcesAdmin = lazy(() => import('./pages/admin/ResourcesAdmin'));
+const AnnouncementsAdmin = lazy(() => import('./pages/admin/AnnouncementsAdmin'));
+const FormsAdmin = lazy(() => import('./pages/admin/FormsAdmin'));
+const MediaLibraryAdmin = lazy(() => import('./pages/admin/MediaLibraryAdmin'));
+const HeroSettingsAdmin = lazy(() => import('./pages/admin/HeroSettingsAdmin'));
+const AnalyticsSettingsAdmin = lazy(() => import('./pages/admin/AnalyticsSettingsAdmin'));
+const FeedModerationAdmin = lazy(() => import('./pages/admin/FeedModerationAdmin'));
+const AdministratorsAdmin = lazy(() => import('./pages/admin/AdministratorsAdmin'));
+const UserDirectoryAdmin = lazy(() => import('./pages/admin/UserDirectoryAdmin'));
+
 import ScrollToTop from './components/common/ScrollToTop';
+
+const AdminLoadingFallback = () => (
+  <div className="min-h-screen bg-[#0a0d12] text-gray-200 flex flex-col items-center justify-center font-mono">
+    <div className="w-8 h-8 border-2 border-[#2f9e44] border-t-transparent rounded-full animate-spin mb-3"></div>
+    <span className="text-xs text-gray-400">Loading Admin Dashboard...</span>
+  </div>
+);
 
 export default function App() {
   return (
@@ -61,33 +69,42 @@ export default function App() {
         <Route path="/verify/member/:verificationId" element={<MemberVerificationPage />} />
 
         {/* Super Admin Login */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route
+          path="/admin/login"
+          element={
+            <Suspense fallback={<AdminLoadingFallback />}>
+              <AdminLogin />
+            </Suspense>
+          }
+        />
 
         {/* Protected Super Admin SaaS Routes */}
         <Route
           path="/admin"
           element={
             <ProtectedRoute>
-              <AdminLayout />
+              <Suspense fallback={<AdminLoadingFallback />}>
+                <AdminLayout />
+              </Suspense>
             </ProtectedRoute>
           }
         >
-          <Route index element={<AdminDashboardHome />} />
-          <Route path="users" element={<UserDirectoryAdmin />} />
-          <Route path="members" element={<MembersAdmin />} />
-          <Route path="teams" element={<TeamsAdmin />} />
-          <Route path="faculty" element={<FacultyAdmin />} />
-          <Route path="mantri" element={<MantriAdmin />} />
-          <Route path="events" element={<EventsAdmin />} />
-          <Route path="gallery" element={<GalleryAdmin />} />
-          <Route path="resources" element={<ResourcesAdmin />} />
-          <Route path="announcements" element={<AnnouncementsAdmin />} />
-          <Route path="forms" element={<FormsAdmin />} />
-          <Route path="media" element={<MediaLibraryAdmin />} />
-          <Route path="hero-settings" element={<HeroSettingsAdmin />} />
-          <Route path="analytics-settings" element={<AnalyticsSettingsAdmin />} />
-          <Route path="feed-moderation" element={<FeedModerationAdmin />} />
-          <Route path="administrators" element={<AdministratorsAdmin />} />
+          <Route index element={<Suspense fallback={<AdminLoadingFallback />}><AdminDashboardHome /></Suspense>} />
+          <Route path="users" element={<Suspense fallback={<AdminLoadingFallback />}><UserDirectoryAdmin /></Suspense>} />
+          <Route path="members" element={<Suspense fallback={<AdminLoadingFallback />}><MembersAdmin /></Suspense>} />
+          <Route path="teams" element={<Suspense fallback={<AdminLoadingFallback />}><TeamsAdmin /></Suspense>} />
+          <Route path="faculty" element={<Suspense fallback={<AdminLoadingFallback />}><FacultyAdmin /></Suspense>} />
+          <Route path="mantri" element={<Suspense fallback={<AdminLoadingFallback />}><MantriAdmin /></Suspense>} />
+          <Route path="events" element={<Suspense fallback={<AdminLoadingFallback />}><EventsAdmin /></Suspense>} />
+          <Route path="gallery" element={<Suspense fallback={<AdminLoadingFallback />}><GalleryAdmin /></Suspense>} />
+          <Route path="resources" element={<Suspense fallback={<AdminLoadingFallback />}><ResourcesAdmin /></Suspense>} />
+          <Route path="announcements" element={<Suspense fallback={<AdminLoadingFallback />}><AnnouncementsAdmin /></Suspense>} />
+          <Route path="forms" element={<Suspense fallback={<AdminLoadingFallback />}><FormsAdmin /></Suspense>} />
+          <Route path="media" element={<Suspense fallback={<AdminLoadingFallback />}><MediaLibraryAdmin /></Suspense>} />
+          <Route path="hero-settings" element={<Suspense fallback={<AdminLoadingFallback />}><HeroSettingsAdmin /></Suspense>} />
+          <Route path="analytics-settings" element={<Suspense fallback={<AdminLoadingFallback />}><AnalyticsSettingsAdmin /></Suspense>} />
+          <Route path="feed-moderation" element={<Suspense fallback={<AdminLoadingFallback />}><FeedModerationAdmin /></Suspense>} />
+          <Route path="administrators" element={<Suspense fallback={<AdminLoadingFallback />}><AdministratorsAdmin /></Suspense>} />
         </Route>
 
         {/* Fallback Catch-all */}

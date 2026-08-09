@@ -299,25 +299,22 @@ export default function ProfilePage() {
 
     if (!cleanTarget && authMember) {
       loadedProfile = authMember;
+    } else if (!cleanTarget && !isAuthenticated && !localStorage.getItem('gfg_token')) {
+      setLoading(false);
+      return;
     } else {
       try {
         const fetchKey = cleanTarget || currentMemberId || 'me';
         const res = await cacheService.dedupe(`profile:${fetchKey}`, () => api.get(`/members/profile/${fetchKey}`));
         loadedProfile = res.data.member || res.data.data;
       } catch (err) {
-        try {
-          const res2 = await cacheService.dedupe(`profile-alt:${targetParam}`, () => api.get(`/members/${targetParam}/profile`));
-          loadedProfile = res2.data.data;
-        } catch (err2) {
-          loadedProfile = authMember || {
-            _id: currentMemberId,
-            name: user?.username || 'Community Member',
-            role: 'Visitor',
-            teamName: 'General',
-            college: 'Jamia Hamdard',
-            department: 'Computer Science & Engineering',
-            photo: `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'Member')}&background=2f9e44&color=fff&bold=true`
-          };
+        if (targetParam) {
+          try {
+            const res2 = await cacheService.dedupe(`profile-alt:${targetParam}`, () => api.get(`/members/${targetParam}/profile`));
+            loadedProfile = res2.data.data;
+          } catch (err2) {
+            loadedProfile = null;
+          }
         }
       }
     }
