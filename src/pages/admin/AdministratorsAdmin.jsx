@@ -17,7 +17,10 @@ import {
   Shield, 
   CheckCircle2, 
   X,
-  History
+  History,
+  Trash2,
+  Loader2,
+  Info
 } from 'lucide-react';
 
 export default function AdministratorsAdmin() {
@@ -50,6 +53,67 @@ export default function AdministratorsAdmin() {
   const [isChangePinOpen, setIsChangePinOpen] = useState(false);
   const [selfPinForm, setSelfPinForm] = useState({ currentPin: '', newPin: '', confirmPin: '' });
   const [selfPinMsg, setSelfPinMsg] = useState({ type: '', text: '' });
+
+  // Audit Log Retention & Cleanup State (Root Super Admin Only)
+  const { user } = useAuth();
+  const isRootSuperAdmin = currentAdminAccess?.adminRole === 'ROOT_SUPER_ADMIN' || user?.role === 'Super Admin';
+
+  const [isCleanupModalOpen, setIsCleanupModalOpen] = useState(false);
+  const [retentionSummary, setRetentionSummary] = useState(null);
+  const [fetchingRetention, setFetchingRetention] = useState(false);
+  const [cleaningUpLogs, setCleaningUpLogs] = useState(false);
+  const [toastMessage, setToastMessage] = useState({ show: false, type: 'info', title: '', text: '' });
+
+  const showToast = (type, title, text) => {
+    setToastMessage({ show: true, type, title, text });
+    setTimeout(() => setToastMessage({ show: false, type: 'info', title: '', text: '' }), 5000);
+  };
+
+  const handleCleanOldLogsClick = async () => {
+    if (fetchingRetention) return;
+    setFetchingRetention(true);
+    try {
+      const res = await api.get('/admin/audit-logs/retention-summary');
+      const summary = res.data;
+      setRetentionSummary(summary);
+
+      if (!summary.eligibleForCleanup || summary.eligibleForCleanup === 0) {
+        showToast(
+          'info',
+          'No old logs to clean.',
+          `All audit logs are within the ${summary.retentionDays || 30}-day retention period.`
+        );
+      } else {
+        setIsCleanupModalOpen(true);
+      }
+    } catch (err) {
+      showToast('error', 'Cleanup Check Failed', err.response?.data?.message || err.message || 'Failed to fetch retention status.');
+    } finally {
+      setFetchingRetention(false);
+    }
+  };
+
+  const handleConfirmCleanup = async () => {
+    if (cleaningUpLogs) return;
+    setCleaningUpLogs(true);
+    try {
+      const res = await api.delete('/admin/audit-logs/cleanup');
+      if (res.data.success) {
+        const count = res.data.deletedCount || 0;
+        setIsCleanupModalOpen(false);
+        showToast(
+          'success',
+          'Cleanup Successful',
+          `${count} old audit log${count === 1 ? '' : 's'} deleted successfully.`
+        );
+        loadData(); // Refreshes audit logs list and count immediately
+      }
+    } catch (err) {
+      showToast('error', 'Cleanup Failed', err.response?.data?.message || err.message || 'Failed to delete audit logs.');
+    } finally {
+      setCleaningUpLogs(false);
+    }
+  };
 
   const allPermissions = [
     { id: 'manage_members', label: 'Manage Members & Directory' },
@@ -410,41 +474,65 @@ export default function AdministratorsAdmin() {
 
       {/* TAB 2: AUDIT LOGS */}
       {activeTab === 'logs' && (
-        <div className={`overflow-x-auto rounded-2xl border ${
-          isLight ? 'bg-white border-gray-200 shadow-sm' : 'bg-[#121721] border-[#30363d]'
-        }`}>
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className={`border-b text-[10px] font-mono uppercase ${
-                isLight ? 'border-gray-200 text-slate-600 bg-gray-50' : 'border-[#30363d] text-gray-400 bg-[#0d1117]/60'
-              }`}>
-                <th className="py-3 px-4">Timestamp</th>
-                <th className="py-3 px-4">Operator</th>
-                <th className="py-3 px-4">Action</th>
-                <th className="py-3 px-4">Target User</th>
-                <th className="py-3 px-4">Details</th>
-              </tr>
-            </thead>
-            <tbody className={`divide-y font-mono text-[11px] ${isLight ? 'divide-gray-200 text-slate-800' : 'divide-[#30363d]/60'}`}>
-              {auditLogs.map((log) => (
-                <tr key={log._id} className={isLight ? 'hover:bg-slate-50' : 'hover:bg-[#18202c]/50'}>
-                  <td className={`py-3 px-4 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{new Date(log.createdAt).toLocaleString()}</td>
-                  <td className={`py-3 px-4 font-bold ${isLight ? 'text-slate-900' : 'text-gray-200'}`}>{log.operatorEmail || 'System'}</td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                      log.action.includes('SUCCESS') ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400' :
-                      log.action.includes('FAILED') ? 'bg-rose-500/20 text-rose-700 dark:text-rose-400' :
-                      'bg-blue-500/20 text-blue-700 dark:text-blue-400'
-                    }`}>
-                      {log.action}
-                    </span>
-                  </td>
-                  <td className={`py-3 px-4 ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{log.targetEmail || 'N/A'}</td>
-                  <td className={`py-3 px-4 max-w-xs truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{log.details}</td>
+        <div className="space-y-3">
+          {/* Action Header with Clean Old Logs button for Root Super Admin */}
+          <div className="flex items-center justify-between px-1">
+            <div className={`text-xs font-mono font-semibold ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
+              Security Audit Event Log History ({auditLogs.length})
+            </div>
+            {isRootSuperAdmin && (
+              <button
+                onClick={handleCleanOldLogsClick}
+                disabled={fetchingRetention}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold font-mono inline-flex items-center gap-2 border bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30 transition-all disabled:opacity-50"
+                title="Clean logs older than configured retention period (30 days)"
+              >
+                {fetchingRetention ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                )}
+                <span>{fetchingRetention ? 'Checking...' : 'Clean Old Logs'}</span>
+              </button>
+            )}
+          </div>
+
+          <div className={`overflow-x-auto rounded-2xl border ${
+            isLight ? 'bg-white border-gray-200 shadow-sm' : 'bg-[#121721] border-[#30363d]'
+          }`}>
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className={`border-b text-[10px] font-mono uppercase ${
+                  isLight ? 'border-gray-200 text-slate-600 bg-gray-50' : 'border-[#30363d] text-gray-400 bg-[#0d1117]/60'
+                }`}>
+                  <th className="py-3 px-4">Timestamp</th>
+                  <th className="py-3 px-4">Operator</th>
+                  <th className="py-3 px-4">Action</th>
+                  <th className="py-3 px-4">Target User</th>
+                  <th className="py-3 px-4">Details</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className={`divide-y font-mono text-[11px] ${isLight ? 'divide-gray-200 text-slate-800' : 'divide-[#30363d]/60'}`}>
+                {auditLogs.map((log) => (
+                  <tr key={log._id} className={isLight ? 'hover:bg-slate-50' : 'hover:bg-[#18202c]/50'}>
+                    <td className={`py-3 px-4 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{new Date(log.createdAt).toLocaleString()}</td>
+                    <td className={`py-3 px-4 font-bold ${isLight ? 'text-slate-900' : 'text-gray-200'}`}>{log.operatorEmail || 'System'}</td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                        log.action.includes('SUCCESS') ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400' :
+                        log.action.includes('FAILED') ? 'bg-rose-500/20 text-rose-700 dark:text-rose-400' :
+                        'bg-blue-500/20 text-blue-700 dark:text-blue-400'
+                      }`}>
+                        {log.action}
+                      </span>
+                    </td>
+                    <td className={`py-3 px-4 ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{log.targetEmail || 'N/A'}</td>
+                    <td className={`py-3 px-4 max-w-xs truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{log.details}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -696,6 +784,77 @@ export default function AdministratorsAdmin() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: AUDIT LOG CLEANUP CONFIRMATION (ROOT SUPER ADMIN ONLY) */}
+      {isCleanupModalOpen && retentionSummary && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className={`border-2 border-rose-500/40 rounded-3xl max-w-md w-full p-6 text-center space-y-5 shadow-2xl relative ${
+            isLight ? 'bg-white text-slate-900' : 'bg-[#121721] text-white'
+          }`}>
+            <button
+              onClick={() => setIsCleanupModalOpen(false)}
+              className={`absolute top-4 right-4 ${isLight ? 'text-gray-400 hover:text-slate-700' : 'text-gray-400 hover:text-white'}`}
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-500">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div>
+              <h3 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                Delete old audit logs?
+              </h3>
+              <p className="text-xs font-mono mt-2 text-rose-600 dark:text-rose-400 font-bold bg-rose-500/10 py-2.5 px-3 rounded-xl border border-rose-500/20">
+                {retentionSummary.eligibleForCleanup} audit log{retentionSummary.eligibleForCleanup === 1 ? '' : 's'} older than {retentionSummary.retentionDays || 30} days will be permanently deleted.
+              </p>
+              <p className={`text-xs mt-2 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="pt-2 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsCleanupModalOpen(false)}
+                disabled={cleaningUpLogs}
+                className={`px-4 py-2.5 rounded-xl text-xs font-semibold ${
+                  isLight ? 'bg-gray-100 text-slate-700 hover:bg-gray-200' : 'bg-[#18202c] text-gray-300 hover:bg-[#30363d]'
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCleanup}
+                disabled={cleaningUpLogs}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-xs font-bold text-white shadow-lg flex items-center gap-2 disabled:opacity-50"
+              >
+                {cleaningUpLogs ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                <span>{cleaningUpLogs ? 'Deleting...' : `Delete ${retentionSummary.eligibleForCleanup} Logs`}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TOAST NOTIFICATION POPUP */}
+      {toastMessage.show && (
+        <div className={`fixed bottom-6 right-6 z-50 p-4 rounded-2xl border shadow-2xl flex items-start gap-3 max-w-sm transition-all font-sans ${
+          toastMessage.type === 'success' ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200' :
+          toastMessage.type === 'error' ? 'bg-rose-950/90 border-rose-500/50 text-rose-200' :
+          'bg-blue-950/90 border-blue-500/50 text-blue-200'
+        }`}>
+          {toastMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" /> :
+           toastMessage.type === 'error' ? <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" /> :
+           <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />}
+          <div>
+            <div className="font-bold text-xs">{toastMessage.title}</div>
+            <div className="text-[11px] mt-0.5 opacity-90">{toastMessage.text}</div>
           </div>
         </div>
       )}
