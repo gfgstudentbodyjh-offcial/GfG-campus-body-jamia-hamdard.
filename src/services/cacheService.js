@@ -140,6 +140,13 @@ export const cacheService = {
   },
 
   /**
+   * Alias for remove(key)
+   */
+  delete(key) {
+    this.remove(key);
+  },
+
+  /**
    * Invalidate all keys matching a pattern string.
    */
   invalidate(pattern) {

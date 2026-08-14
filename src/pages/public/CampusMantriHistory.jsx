@@ -21,6 +21,14 @@ export default function CampusMantriHistory() {
   const [selectedSessionId, setSelectedSessionId] = useState(null);
 
   useEffect(() => {
+    // Subscribe to cache updates (realtime sync when admin edits/sets mantri)
+    const unsub = cacheService.subscribe('mantri', (data) => {
+      if (Array.isArray(data) && data.length > 0) {
+        setMantris(data);
+        setLoading(false);
+      }
+    });
+
     cacheService.dedupe('mantri', () => api.get('/mantri'))
       .then((res) => {
         const raw = res.data.data?.length ? res.data.data : MOCK_MANTRI_LIST;
@@ -32,6 +40,8 @@ export default function CampusMantriHistory() {
         if (mantris.length === 0) setMantris(MOCK_MANTRI_LIST);
       })
       .finally(() => setLoading(false));
+
+    return () => unsub();
   }, []);
 
   const sortedMantris = useMemo(() => {
@@ -133,60 +143,71 @@ export default function CampusMantriHistory() {
                   </h2>
 
                   <p className="text-sm sm:text-base text-gray-300 leading-relaxed italic bg-[#0a0d12]/80 p-4 rounded-2xl border border-[#30363d]">
-                    "{activeMantri.about}"
+                    "{activeMantri.about || activeMantri.memberRef?.bio || activeMantri.memberRef?.about || 'Leading community initiatives and technical growth.'}"
                   </p>
 
                   {/* Verified Social Links */}
-                  <div className="flex flex-wrap gap-3 justify-center md:justify-start pt-2">
-                    {activeMantri.socials?.email && (
-                      <a
-                        href={`mailto:${activeMantri.socials.email}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 rounded-xl bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#2f9e44] transition-colors border border-[#30363d] flex items-center gap-2 text-xs font-semibold"
-                        title="Email"
-                      >
-                        <Mail className="w-4 h-4 text-[#2f9e44]" />
-                        <span>{activeMantri.socials.email}</span>
-                      </a>
-                    )}
-                    {activeMantri.socials?.linkedin && (
-                      <a
-                        href={activeMantri.socials.linkedin}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 rounded-xl bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#0077b5] transition-colors border border-[#30363d] flex items-center gap-2 text-xs font-semibold"
-                        title="LinkedIn"
-                      >
-                        <Linkedin className="w-4 h-4 text-[#0077b5]" />
-                        <span>LinkedIn</span>
-                      </a>
-                    )}
-                    {activeMantri.socials?.github && (
-                      <a
-                        href={activeMantri.socials.github}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 rounded-xl bg-[#18202c] text-gray-300 hover:text-white hover:bg-gray-700 transition-colors border border-[#30363d] flex items-center gap-2 text-xs font-semibold"
-                        title="GitHub"
-                      >
-                        <Github className="w-4 h-4 text-gray-100" />
-                        <span>GitHub</span>
-                      </a>
-                    )}
-                    {activeMantri.socials?.instagram && (
-                      <a
-                        href={activeMantri.socials.instagram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 rounded-xl bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#e1306c] transition-colors border border-[#30363d] flex items-center gap-2 text-xs font-semibold"
-                        title="Instagram"
-                      >
-                        <Instagram className="w-4 h-4 text-[#e1306c]" />
-                        <span>Instagram</span>
-                      </a>
-                    )}
-                  </div>
+                  {(() => {
+                    const soc = activeMantri.socials || activeMantri.memberRef?.socials || {
+                      email: activeMantri.memberRef?.email || activeMantri.email,
+                      linkedin: activeMantri.memberRef?.linkedin || activeMantri.linkedin,
+                      github: activeMantri.memberRef?.github || activeMantri.github,
+                      instagram: activeMantri.memberRef?.instagram || activeMantri.instagram
+                    };
+
+                    return (
+                      <div className="flex flex-wrap gap-3 justify-center md:justify-start pt-2">
+                        {soc?.email && (
+                          <a
+                            href={`mailto:${soc.email}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 rounded-xl bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#2f9e44] transition-colors border border-[#30363d] flex items-center gap-2 text-xs font-semibold"
+                            title="Email"
+                          >
+                            <Mail className="w-4 h-4 text-[#2f9e44]" />
+                            <span>{soc.email}</span>
+                          </a>
+                        )}
+                        {soc?.linkedin && (
+                          <a
+                            href={soc.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 rounded-xl bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#0077b5] transition-colors border border-[#30363d] flex items-center gap-2 text-xs font-semibold"
+                            title="LinkedIn"
+                          >
+                            <Linkedin className="w-4 h-4 text-[#0077b5]" />
+                            <span>LinkedIn</span>
+                          </a>
+                        )}
+                        {soc?.github && (
+                          <a
+                            href={soc.github}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 rounded-xl bg-[#18202c] text-gray-300 hover:text-white hover:bg-gray-700 transition-colors border border-[#30363d] flex items-center gap-2 text-xs font-semibold"
+                            title="GitHub"
+                          >
+                            <Github className="w-4 h-4 text-gray-100" />
+                            <span>GitHub</span>
+                          </a>
+                        )}
+                        {soc?.instagram && (
+                          <a
+                            href={soc.instagram}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 rounded-xl bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#e1306c] transition-colors border border-[#30363d] flex items-center gap-2 text-xs font-semibold"
+                            title="Instagram"
+                          >
+                            <Instagram className="w-4 h-4 text-[#e1306c]" />
+                            <span>Instagram</span>
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </TechCard>

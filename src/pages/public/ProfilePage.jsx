@@ -12,6 +12,7 @@ import PostCard from '../../components/community/PostCard';
 import ReportModal from '../../components/common/ReportModal';
 import { useAuth } from '../../context/AuthContext';
 import { resolveAvatarUrl, isValidMediaUrl, getValidMediaUrl, formatDisplayHandle } from '../../utils/mediaResolver';
+import { resolveProfileTheme } from '../../utils/membershipTheme';
 import cacheService from '../../services/cacheService';
 import { getCachedProfile, setCachedProfile, patchCachedPost } from '../../utils/communityCache';
 
@@ -30,7 +31,7 @@ export default function ProfilePage() {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'overview';
 
-  const { user, member: authMember, isAuthenticated, openAuthModal, requireAuthAction } = useAuth();
+  const { user, member: authMember, isAuthenticated, openAuthModal, requireAuthAction, updateUserLocalCache } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -287,12 +288,19 @@ export default function ProfilePage() {
 
   const loadProfileData = async () => {
     const cleanTarget = (targetParam && targetParam !== 'undefined' && targetParam !== 'null') ? targetParam : null;
-    const cachedProfile = cleanTarget ? cacheService.get(`profile:${cleanTarget}`)?.data : null;
-    if (cachedProfile) {
-      setProfile(cachedProfile);
+    
+    // Check if visiting own profile and authMember exists in AuthContext (Instant 0ms render)
+    if (!cleanTarget && authMember) {
+      setProfile(authMember);
       setLoading(false);
     } else {
-      setLoading(true);
+      const cachedProfile = cleanTarget ? cacheService.get(`profile:${cleanTarget}`)?.data : null;
+      if (cachedProfile) {
+        setProfile(cachedProfile);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
     }
 
     let loadedProfile = null;
@@ -320,6 +328,7 @@ export default function ProfilePage() {
     }
 
     setProfile(loadedProfile);
+    setLoading(false);
     if (loadedProfile) {
       const pKey = cleanTarget || loadedProfile._id;
       if (pKey) cacheService.set(`profile:${pKey}`, loadedProfile);
@@ -380,13 +389,17 @@ export default function ProfilePage() {
       const targetId = profile?._id || currentUserId;
       const res = await api.patch(`/members/${targetId}/profile`, editForm);
       if (res.data.success) {
-        setProfile(res.data.data);
+        const updated = res.data.data;
+        setProfile(updated);
+        updateUserLocalCache(updated);
       }
     } catch (err) {
       if (err.response?.status === 403) {
         alert(err.response?.data?.message || 'You can only edit your own profile.');
       } else {
-        setProfile(prev => ({ ...prev, ...editForm }));
+        const merged = { ...(profile || {}), ...editForm };
+        setProfile(merged);
+        updateUserLocalCache(merged);
       }
     }
     setIsSavingProfile(false);
@@ -454,6 +467,8 @@ export default function ProfilePage() {
     );
   }
 
+  const profileTheme = resolveProfileTheme(profile);
+
   return (
     <div className="min-h-screen bg-transparent text-gray-100 flex flex-col font-sans">
       <Navbar />
@@ -478,7 +493,10 @@ export default function ProfilePage() {
           <div className="space-y-8">
 
             {/* Profile Banner & Header Card */}
-            <TechCard className="border-[#30363d] bg-[#121721] overflow-hidden p-0">
+            <TechCard className={`${profileTheme.outerBorder} bg-[#121721] overflow-hidden p-0 relative transition-all duration-300`}>
+              {profileTheme.accentGlow && (
+                <div className={`absolute top-0 right-0 w-80 h-80 ${profileTheme.accentGlow} rounded-full blur-3xl pointer-events-none`} />
+              )}
               
               {/* Cover Banner */}
               <div className="h-44 sm:h-60 w-full bg-gradient-to-r from-[#18202c] via-[#121721] to-[#1e1338] relative">
@@ -499,7 +517,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="absolute top-4 right-4 px-3.5 py-1.5 rounded-xl bg-[#121721]/90 hover:bg-[#2f9e44] text-white text-xs font-mono font-bold border border-[#30363d] hover:border-[#2f9e44] backdrop-blur transition-all flex items-center gap-1.5 shadow-lg z-20 cursor-pointer"
+                    className={`absolute top-4 right-4 px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold backdrop-blur transition-all flex items-center gap-1.5 shadow-lg z-20 cursor-pointer ${profileTheme.editBtnClass}`}
                   >
                     <Edit3 className="w-3.5 h-3.5" /> Edit Profile
                   </button>
@@ -518,7 +536,7 @@ export default function ProfilePage() {
                       <img
                         src={avatarError ? resolveAvatarUrl('', profile.name) : resolveAvatarUrl(profile.photo, profile.name)}
                         alt={profile.name}
-                        className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl object-cover border-4 border-[#2f9e44] bg-[#0a0d12] shadow-2xl"
+                        className={`w-28 h-28 sm:w-36 sm:h-36 rounded-2xl object-cover ${profileTheme.avatarBorder}`}
                         onError={() => setAvatarError(true)}
                       />
                     </div>
@@ -532,7 +550,7 @@ export default function ProfilePage() {
                       </h1>
 
                       {/* @Username */}
-                      <p className="text-xs sm:text-sm font-mono font-bold text-[#2f9e44]">
+                      <p className={`text-xs sm:text-sm font-mono font-bold ${profileTheme.usernameText}`}>
                         {formatDisplayHandle(profile.username, profile.name)}
                       </p>
 
@@ -542,7 +560,7 @@ export default function ProfilePage() {
 
                         {profile.userCode && (
                           <span className="px-2.5 py-1 rounded-lg bg-[#18202c] border border-[#30363d] font-mono text-[11px] font-bold text-gray-300 shadow-sm">
-                            User ID: <span className="text-[#2f9e44]">{profile.userCode}</span>
+                            User ID: <span className={profileTheme.userCodeText}>{profile.userCode}</span>
                           </span>
                         )}
 
@@ -564,7 +582,7 @@ export default function ProfilePage() {
                   {/* Right: Posts Count Badge */}
                   <div className="flex items-center gap-3 flex-shrink-0 pt-2 md:pt-0">
                     <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#18202c] border border-[#30363d] font-mono text-xs font-bold text-gray-300 shadow-sm">
-                      <span className="text-[#2f9e44] text-sm">{userPosts.length}</span>
+                      <span className={`${profileTheme.postsCountText} text-sm font-black`}>{userPosts.length}</span>
                       <span>{userPosts.length === 1 ? 'Post' : 'Posts'}</span>
                     </div>
                   </div>
@@ -612,7 +630,7 @@ export default function ProfilePage() {
               <button
                 onClick={() => setActiveTab('overview')}
                 className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${
-                  activeTab === 'overview' ? 'bg-[#2f9e44] text-white shadow' : 'text-gray-400 hover:text-white hover:bg-[#18202c]'
+                  activeTab === 'overview' ? profileTheme.tabActiveClass : 'text-gray-400 hover:text-white hover:bg-[#18202c]'
                 }`}
               >
                 Overview
@@ -621,7 +639,7 @@ export default function ProfilePage() {
               <button
                 onClick={() => setActiveTab('posts')}
                 className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${
-                  activeTab === 'posts' ? 'bg-[#2f9e44] text-white shadow' : 'text-gray-400 hover:text-white hover:bg-[#18202c]'
+                  activeTab === 'posts' ? profileTheme.tabActiveClass : 'text-gray-400 hover:text-white hover:bg-[#18202c]'
                 }`}
               >
                 Posts ({userPosts.length})
@@ -631,7 +649,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => setActiveTab('saved')}
                   className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${
-                    activeTab === 'saved' ? 'bg-[#2f9e44] text-white shadow' : 'text-gray-400 hover:text-white hover:bg-[#18202c]'
+                    activeTab === 'saved' ? profileTheme.tabActiveClass : 'text-gray-400 hover:text-white hover:bg-[#18202c]'
                   }`}
                 >
                   Saved ({savedPosts.length})
@@ -643,7 +661,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => setActiveTab('card')}
                   className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${
-                    activeTab === 'card' ? 'bg-[#2f9e44] text-white shadow' : 'text-gray-400 hover:text-white hover:bg-[#18202c]'
+                    activeTab === 'card' ? profileTheme.tabActiveClass : 'text-gray-400 hover:text-white hover:bg-[#18202c]'
                   }`}
                 >
                   Membership Card
@@ -655,7 +673,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => setActiveTab('settings')}
                   className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${
-                    activeTab === 'settings' ? 'bg-[#2f9e44] text-white shadow' : 'text-gray-400 hover:text-white hover:bg-[#18202c]'
+                    activeTab === 'settings' ? profileTheme.tabActiveClass : 'text-gray-400 hover:text-white hover:bg-[#18202c]'
                   }`}
                 >
                   Settings

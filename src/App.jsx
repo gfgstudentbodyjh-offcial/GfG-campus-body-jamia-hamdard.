@@ -15,6 +15,7 @@ import PostDetailPage from './pages/public/PostDetailPage';
 import LeaderboardPage from './pages/public/LeaderboardPage';
 import ProfilePage from './pages/public/ProfilePage';
 import MemberVerificationPage from './pages/public/MemberVerificationPage';
+import MembersPage from './pages/public/MembersPage';
 
 // Admin Pages & Protected Layout (Lazy Loaded to minimize public bundle size)
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -54,6 +55,7 @@ export default function App() {
         {/* Public & Member Space Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/teams" element={<TeamsPage />} />
+        <Route path="/members" element={<MembersPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/resources" element={<ResourcesPage />} />

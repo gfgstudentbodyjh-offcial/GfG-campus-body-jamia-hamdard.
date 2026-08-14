@@ -35,12 +35,52 @@ export const AuthProvider = ({ children }) => {
     return true;
   };
 
+  // Instant Cache Hydration for Zero-Flicker Bootstrapping
+  useEffect(() => {
+    const cachedAuth = cacheService.get('auth_user_session')?.data;
+    if (cachedAuth?.user) {
+      setUser(cachedAuth.user);
+      setMember(cachedAuth.member || null);
+      setAdminAccess(cachedAuth.adminAccess || null);
+      setLoading(false);
+    }
+  }, []);
+
+  const updateUserLocalCache = (updatedData) => {
+    if (!updatedData) return;
+    setMember((prev) => {
+      const next = prev ? { ...prev, ...updatedData } : updatedData;
+      cacheService.set('auth_user_session', { user, member: next, adminAccess });
+      return next;
+    });
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       if (!token) {
+        // Attempt silent refresh if no token in memory
+        try {
+          const refreshRes = await api.post('/auth/refresh');
+          if (refreshRes.data?.token) {
+            localStorage.setItem('gfg_token', refreshRes.data.token);
+            setToken(refreshRes.data.token);
+            setUser(refreshRes.data.user);
+            setMember(refreshRes.data.member || null);
+            setAdminAccess(refreshRes.data.adminAccess || null);
+            cacheService.set('auth_user_session', {
+              user: refreshRes.data.user,
+              member: refreshRes.data.member,
+              adminAccess: refreshRes.data.adminAccess
+            });
+            setLoading(false);
+            return;
+          }
+        } catch (e) {}
+
         setUser(null);
         setMember(null);
         setAdminAccess(null);
+        cacheService.remove('auth_user_session');
         setLoading(false);
         return;
       }
@@ -51,12 +91,18 @@ export const AuthProvider = ({ children }) => {
           setUser(res.data.user);
           setMember(res.data.member || null);
           setAdminAccess(res.data.adminAccess || null);
+          cacheService.set('auth_user_session', {
+            user: res.data.user,
+            member: res.data.member,
+            adminAccess: res.data.adminAccess
+          });
         } else {
           throw new Error('Invalid token response');
         }
       } catch (err) {
         console.warn('Token verification failed:', err.message);
         localStorage.removeItem('gfg_token');
+        cacheService.remove('auth_user_session');
         setToken('');
         setUser(null);
         setMember(null);
@@ -204,6 +250,7 @@ export const AuthProvider = ({ children }) => {
       changeAdminPin,
       logout,
       refreshUser,
+      updateUserLocalCache,
       isAuthenticated: !!user,
       isAdminAuthenticated: !!adminAccess && adminAccess.adminRole,
       isAuthModalOpen,
@@ -219,4 +266,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext) || {};

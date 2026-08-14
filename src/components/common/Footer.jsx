@@ -226,6 +226,7 @@ export default function Footer() {
                   <Link to="/" className="block py-1">Home</Link>
                   <Link to="/campus-mantri" className="block py-1">Campus Mantri</Link>
                   <Link to="/teams" className="block py-1">Teams</Link>
+                  <Link to="/members" className="block py-1">Members</Link>
                   <Link to="/events" className="block py-1">Events</Link>
                   <Link to="/gallery" className="block py-1">Gallery</Link>
                 </div>
@@ -350,6 +351,7 @@ export default function Footer() {
                 { label: 'Home', path: '/' },
                 { label: 'Campus Mantri', path: '/campus-mantri' },
                 { label: 'Teams', path: '/teams' },
+                { label: 'Members', path: '/members' },
                 { label: 'Events', path: '/events' },
                 { label: 'Gallery', path: '/gallery' }
               ].map((item) => (

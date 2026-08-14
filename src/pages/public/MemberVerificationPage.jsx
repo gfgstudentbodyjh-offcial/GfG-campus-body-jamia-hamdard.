@@ -6,6 +6,7 @@ import api from '../../services/api';
 import RoleBadge from '../../components/common/RoleBadge';
 import TechCard from '../../components/common/TechCard';
 import { ShieldCheck, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { resolveMembershipCardTheme, MEMBERSHIP_THEMES } from '../../utils/membershipTheme';
 
 export default function MemberVerificationPage() {
   const { verificationId } = useParams();
@@ -42,6 +43,8 @@ export default function MemberVerificationPage() {
     loadVerification();
   }, [verificationId]);
 
+  const theme = resolveMembershipCardTheme(data);
+
   return (
     <div className="min-h-screen bg-transparent text-gray-100 flex flex-col font-sans">
       <Navbar />
@@ -64,17 +67,26 @@ export default function MemberVerificationPage() {
             <p className="text-xs text-gray-400">The requested membership verification ID was not found in our chapter registry.</p>
           </TechCard>
         ) : (
-          <TechCard cornerAccents={true} className="p-6 sm:p-8 bg-gradient-to-br from-[#121721] via-[#0d141e] to-[#142e16]/40 border-[#2f9e44] space-y-6 text-center shadow-2xl">
-            
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#2f9e44]/15 border border-[#2f9e44]/40 text-[#2f9e44] text-xs font-mono font-bold">
-              <CheckCircle2 className="w-4 h-4" /> OFFICIAL VERIFIED MEMBER
+          <TechCard
+            cornerAccents={true}
+            className={`p-6 sm:p-8 ${theme.cardBg} ${theme.cardBorder} space-y-6 text-center shadow-2xl relative overflow-hidden transition-all duration-300`}
+          >
+            {/* Ambient Top Right Glow */}
+            <div className={`absolute top-0 right-0 w-64 h-64 ${theme.accentGlow} rounded-full blur-3xl pointer-events-none`} />
+
+            <div className="relative z-10">
+              <div
+                className={`inline-flex items-center gap-2 px-3.5 py-1 rounded-full ${theme.verifiedBadge} text-xs font-mono font-bold uppercase tracking-wider`}
+              >
+                <CheckCircle2 className="w-4 h-4" /> OFFICIAL VERIFIED MEMBER
+              </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 relative z-10">
               <img
                 src={data.photo}
                 alt={data.name}
-                className="w-24 h-24 rounded-2xl object-cover border-2 border-[#2f9e44] mx-auto shadow-xl"
+                className={`w-24 h-24 rounded-2xl object-cover ${theme.photoBorder} mx-auto bg-[#0a0d12]`}
               />
 
               <div>
@@ -85,29 +97,29 @@ export default function MemberVerificationPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-[#0a0d12] border border-[#30363d] text-left text-xs font-mono">
-              <div>
+            <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl ${theme.gridBg} text-left text-xs font-mono relative z-10 sm:divide-x sm:divide-[#30363d]/30`}>
+              <div className="sm:pr-2">
                 <span className="text-[10px] text-gray-500 uppercase block">Chapter</span>
-                <span className="font-bold text-white truncate block">{data.chapter || 'Jamia Hamdard'}</span>
+                <span className="font-bold text-white block">{data.chapter || 'Jamia Hamdard'}</span>
               </div>
 
-              <div>
+              <div className="sm:pl-3 sm:pr-2">
                 <span className="text-[10px] text-gray-500 uppercase block">Member ID</span>
-                <span className="font-bold text-[#2f9e44] block">{data.membershipId || 'GFG-JH-2026-001'}</span>
+                <span className={`font-bold ${theme.credentialVal} block break-all`}>{data.membershipId || 'GFG-JH-2026-001'}</span>
               </div>
 
-              <div>
+              <div className="sm:pl-3 sm:pr-2">
                 <span className="text-[10px] text-gray-500 uppercase block">Active Session</span>
                 <span className="text-gray-300 block">{data.session || '2026–27'}</span>
               </div>
 
-              <div>
+              <div className="sm:pl-3">
                 <span className="text-[10px] text-gray-500 uppercase block">Status</span>
-                <span className="text-[#2f9e44] font-bold capitalize block">{data.membershipStatus || 'active'}</span>
+                <span className={`${theme.statusText} font-bold capitalize block`}>● {data.membershipStatus || 'active'}</span>
               </div>
             </div>
 
-            <p className="text-[10px] text-gray-500 font-mono">
+            <p className="text-[10px] text-gray-500 font-mono relative z-10">
               Cryptographically verified by GeeksforGeeks Campus Body.
             </p>
           </TechCard>

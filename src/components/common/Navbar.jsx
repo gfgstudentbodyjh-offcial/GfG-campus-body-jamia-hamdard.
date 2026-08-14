@@ -57,6 +57,7 @@ export default function Navbar() {
     { name: 'Home', path: '/' },
     { name: 'Campus Mantri', path: '/campus-mantri' },
     { name: 'Teams', path: '/teams' },
+    { name: 'Members', path: '/members' },
     { name: 'Events', path: '/events' },
     { name: 'Community', path: '/community', badge: 'Feed' }
   ];

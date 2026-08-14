@@ -95,12 +95,67 @@ const FALLBACK_MAP = {
   })
 };
 
-// ─── Response Interceptor: Auto-fallback to dummy data on offline/network errors ──
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// ─── Response Interceptor: Auto-fallback to dummy data on offline/network errors & 401 Silent Refresh ──
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const config = error.config;
     const status = error.response?.status;
+
+    const isAuthRequest = config?.url && (
+      config.url.includes('/auth/login') ||
+      config.url.includes('/auth/admin-login') ||
+      config.url.includes('/auth/signup') ||
+      config.url.includes('/auth/refresh')
+    );
+
+    // ── Silent Token Refresh on 401 Unauthorized ──
+    if (status === 401 && !isAuthRequest && config && !config._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            config.headers.Authorization = `Bearer ${token}`;
+            return api(config);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      config._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshRes = await api.post('/auth/refresh');
+        const newToken = refreshRes.data?.token;
+        if (newToken) {
+          localStorage.setItem('gfg_token', newToken);
+          api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+          processQueue(null, newToken);
+          config.headers.Authorization = `Bearer ${newToken}`;
+          return api(config);
+        }
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        localStorage.removeItem('gfg_token');
+      } finally {
+        isRefreshing = false;
+      }
+    }
 
     // Do NOT treat 4xx status codes (401, 403, 404, 422) as network failures.
     // Allow the caller to handle authentic 4xx status codes.

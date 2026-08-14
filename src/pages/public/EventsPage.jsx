@@ -4,13 +4,17 @@ import Footer from '../../components/common/Footer';
 import api from '../../services/api';
 import { MOCK_EVENTS } from '../../data/events';
 import { Calendar, UserCheck, Handshake, Trophy, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import TechHeader from '../../components/common/TechHeader';
 import TechCard from '../../components/common/TechCard';
+import EmbedModal from '../../components/common/EmbedModal';
+import { handleLinkAction } from '../../utils/linkHandler';
 
 import cacheService from '../../services/cacheService';
 
 export default function EventsPage() {
+  const navigate = useNavigate();
+  const [embedModalState, setEmbedModalState] = useState({ isOpen: false, url: '', title: '' });
   const [events, setEvents] = useState(() => {
     const cached = cacheService.get('events');
     return cached?.data || [];
@@ -310,15 +314,24 @@ export default function EventsPage() {
               {/* Action Button */}
               <div className="pt-2">
                 {selectedEvent.registrationLink ? (
-                  <a
-                    href={selectedEvent.registrationLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-3 rounded-xl gradient-button text-xs font-bold flex items-center justify-center gap-2 shadow-lg"
+                  <button
+                    onClick={() =>
+                      handleLinkAction(selectedEvent.registrationLink, {
+                        navigate,
+                        openEmbedModal: (url) =>
+                          setEmbedModalState({
+                            isOpen: true,
+                            url,
+                            title: selectedEvent.title || selectedEvent.name || 'Event Registration'
+                          }),
+                        title: selectedEvent.title || selectedEvent.name
+                      })
+                    }
+                    className="w-full py-3 rounded-xl gradient-button text-xs font-bold flex items-center justify-center gap-2 shadow-lg cursor-pointer"
                   >
                     <span>Register / Apply Now</span>
                     <ExternalLink className="w-4 h-4" />
-                  </a>
+                  </button>
                 ) : (selectedEvent.formId || selectedEvent.registrationFormRef) ? (
                   <Link
                     to={`/forms/${selectedEvent.formId || selectedEvent.registrationFormRef}`}
@@ -340,6 +353,14 @@ export default function EventsPage() {
           </div>
         </div>
       )}
+
+      {/* Google / Microsoft Form Embed Modal */}
+      <EmbedModal
+        isOpen={embedModalState.isOpen}
+        onClose={() => setEmbedModalState({ isOpen: false, url: '', title: '' })}
+        url={embedModalState.url}
+        title={embedModalState.title}
+      />
 
       <Footer />
     </div>

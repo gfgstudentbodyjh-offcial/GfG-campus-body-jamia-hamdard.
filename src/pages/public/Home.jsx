@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  ArrowRight, Sparkles, ChevronRight, Mail, Linkedin, Instagram, Github,
+  ArrowRight, ArrowUpRight, Sparkles, ChevronRight, Mail, Linkedin, Instagram, Github,
   ShieldCheck, Users, Palette, Calendar, Megaphone, Share2, Terminal,
   Image as ImageIcon, Trophy, Code2, Bell, Pin, CheckCircle2
 } from 'lucide-react';
@@ -38,19 +38,20 @@ const getTeamIcon = (iconName) => {
 };
 
 export default function Home() {
-  const facultyList = MOCK_FACULTY;
-
-  // Sort Campus Mantris by tenure (newest first: 2025–26 -> Ali Raza)
-  const sortedMantris = [...MOCK_MANTRI_LIST].sort((a, b) => {
-    const getStartYear = (item) => {
-      const str = item.tenure || item.session || '';
-      const match = str.match(/\d{4}/);
-      return match ? parseInt(match[0], 10) : 0;
-    };
-    return getStartYear(b) - getStartYear(a);
+  const [liveMantris, setLiveMantris] = useState(() => {
+    const cached = cacheService.get('mantri');
+    return cached?.data || [];
   });
-  const currentMantri = sortedMantris[0];
-  const teamsList = MOCK_TEAMS;
+
+  const [liveTeams, setLiveTeams] = useState(() => {
+    const cached = cacheService.get('teams');
+    return cached?.data || [];
+  });
+
+  const [liveFaculty, setLiveFaculty] = useState(() => {
+    const cached = cacheService.get('faculty');
+    return cached?.data || [];
+  });
 
   const [liveEvents, setLiveEvents] = useState(() => {
     const cached = cacheService.get('events');
@@ -63,7 +64,16 @@ export default function Home() {
   });
 
   useEffect(() => {
-    // Subscribe to cache updates (realtime sync when admin mutates events/announcements)
+    // Subscribe to cache updates (realtime sync when admin mutates mantri/teams/faculty/events/announcements)
+    const unsubMantri = cacheService.subscribe('mantri', (data) => {
+      if (Array.isArray(data)) setLiveMantris(data);
+    });
+    const unsubTeams = cacheService.subscribe('teams', (data) => {
+      if (Array.isArray(data)) setLiveTeams(data);
+    });
+    const unsubFaculty = cacheService.subscribe('faculty', (data) => {
+      if (Array.isArray(data)) setLiveFaculty(data);
+    });
     const unsubEvents = cacheService.subscribe('events', (data) => {
       if (Array.isArray(data)) setLiveEvents(data);
     });
@@ -71,7 +81,37 @@ export default function Home() {
       if (Array.isArray(data)) setAnnouncements(data);
     });
 
-    // Independent background revalidation (No Promise.all dependency)
+    // Independent background revalidations
+    cacheService.dedupe('mantri', () => api.get('/mantri'))
+      .then(res => {
+        const data = res.data?.data || [];
+        if (data.length > 0) {
+          setLiveMantris(data);
+          cacheService.set('mantri', data);
+        }
+      })
+      .catch(err => console.warn('[Home] Background mantri sync error:', err));
+
+    cacheService.dedupe('teams', () => api.get('/teams'))
+      .then(res => {
+        const data = res.data?.data || [];
+        if (data.length > 0) {
+          setLiveTeams(data);
+          cacheService.set('teams', data);
+        }
+      })
+      .catch(err => console.warn('[Home] Background teams sync error:', err));
+
+    cacheService.dedupe('faculty', () => api.get('/faculty'))
+      .then(res => {
+        const data = res.data?.data || [];
+        if (data.length > 0) {
+          setLiveFaculty(data);
+          cacheService.set('faculty', data);
+        }
+      })
+      .catch(err => console.warn('[Home] Background faculty sync error:', err));
+
     cacheService.dedupe('events', () => api.get('/events'))
       .then(res => {
         const data = res.data?.data || [];
@@ -89,10 +129,198 @@ export default function Home() {
       .catch(err => console.warn('[Home] Background announcements sync error:', err));
 
     return () => {
+      unsubMantri();
+      unsubTeams();
+      unsubFaculty();
       unsubEvents();
       unsubAnn();
     };
   }, []);
+
+  const normalizePerson = (p, fallbackTitle = 'Member') => {
+    if (!p) return null;
+    const bioText = p.bio || p.about || p.message || 'GeeksforGeeks Campus Body Member';
+    return {
+      _id: p._id,
+      name: p.name || p.fullName,
+      username: p.username || p.userRef?.username,
+      photo: p.photo || p.userRef?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+      title: p.title || p.role || fallbackTitle,
+      role: p.role || p.title || fallbackTitle,
+      message: bioText,
+      bio: bioText,
+      about: bioText,
+      imagePosition: p.imagePosition || 'center 50%',
+      socials: p.socials || {
+        email: p.email || p.userRef?.email,
+        linkedin: p.linkedin,
+        github: p.github,
+        instagram: p.instagram
+      }
+    };
+  };
+
+  // Determine current live Campus Mantri (prefer isCurrent: true, then newest session)
+  const effectiveMantris = liveMantris.length > 0 ? liveMantris : MOCK_MANTRI_LIST;
+  const currentMantriRaw = effectiveMantris.find(m => m.isCurrent) || effectiveMantris[0];
+  const currentMantri = currentMantriRaw ? {
+    _id: currentMantriRaw._id,
+    name: currentMantriRaw.memberRef?.name || currentMantriRaw.name,
+    username: currentMantriRaw.memberRef?.username || currentMantriRaw.username,
+    photo: currentMantriRaw.memberRef?.photo || currentMantriRaw.photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+    about: currentMantriRaw.about || currentMantriRaw.memberRef?.bio || currentMantriRaw.memberRef?.about || 'Leading community initiatives and technical growth.',
+    session: currentMantriRaw.session || currentMantriRaw.tenure || '2025–2026',
+    imagePosition: currentMantriRaw.imagePosition || 'center top',
+    socials: currentMantriRaw.memberRef?.socials || {
+      email: currentMantriRaw.memberRef?.email || currentMantriRaw.email,
+      linkedin: currentMantriRaw.memberRef?.linkedin || currentMantriRaw.linkedin,
+      instagram: currentMantriRaw.memberRef?.instagram || currentMantriRaw.instagram,
+      github: currentMantriRaw.memberRef?.github || currentMantriRaw.github
+    }
+  } : null;
+
+  // Determine live teams list (excluding Community Lead as it's prominently highlighted in Leadership section)
+  const effectiveTeams = liveTeams.length > 0 ? liveTeams : MOCK_TEAMS;
+  const teamsList = effectiveTeams
+    .filter(t => !t.name?.toLowerCase().includes('community'))
+    .map(t => {
+      const memberRefs = Array.isArray(t.memberRefs) ? t.memberRefs : [];
+      return {
+        _id: t._id,
+        name: t.name,
+        icon: t.icon,
+        description: t.description,
+        lead: normalizePerson(t.lead || t.leadRef, 'Lead'),
+        coLead: normalizePerson(t.coLead || t.coLeadRef, 'Co-Lead'),
+        members: memberRefs.map(m => normalizePerson(m, 'Member')).filter(Boolean)
+      };
+    });
+
+  // Helper to map team domain names to specific Lead and Co-Lead titles
+  const getDomainRoleTitles = (teamName = '') => {
+    if (/design|creative/i.test(teamName)) return { leadRole: 'Design Lead', coLeadRole: 'Design Co-Lead' };
+    if (/tech/i.test(teamName)) return { leadRole: 'Technical Lead', coLeadRole: 'Technical Co-Lead' };
+    if (/event|operation/i.test(teamName)) return { leadRole: 'Event Lead', coLeadRole: 'Event Co-Lead' };
+    if (/pr|outreach/i.test(teamName)) return { leadRole: 'PR & Outreach Lead', coLeadRole: 'PR & Outreach Co-Lead' };
+    if (/social/i.test(teamName)) return { leadRole: 'Social Media Lead', coLeadRole: 'Social Media Co-Lead' };
+    if (/community/i.test(teamName)) return { leadRole: 'Community Lead', coLeadRole: 'Community Co-Lead' };
+    return { leadRole: `${teamName} Lead`, coLeadRole: `${teamName} Co-Lead` };
+  };
+
+  // Assemble Infinite Leadership Showcase List (Individual Leader Cards — Campus Mantri is kept separate & static)
+  const DOMAIN_LEADERSHIP_ORDER = [
+    { key: 'community' },
+    { key: 'design' },
+    { key: 'event' },
+    { key: 'pr' },
+    { key: 'social' },
+    { key: 'tech' }
+  ];
+
+  const leadershipShowcaseList = [];
+
+  DOMAIN_LEADERSHIP_ORDER.forEach(({ key }) => {
+    const team = effectiveTeams.find(t => t.name && new RegExp(key, 'i').test(t.name));
+    if (team) {
+      const lead = normalizePerson(team.lead || team.leadRef, 'Lead');
+      const coLead = normalizePerson(team.coLead || team.coLeadRef, 'Co-Lead');
+      const { leadRole, coLeadRole } = getDomainRoleTitles(team.name);
+
+      if (lead && lead.name) {
+        leadershipShowcaseList.push({
+          _id: `${team._id}-lead`,
+          personId: lead._id,
+          name: lead.name,
+          username: lead.username,
+          photo: lead.photo,
+          imagePosition: lead.imagePosition || 'center 50%',
+          roleTitle: leadRole,
+          teamName: team.name,
+          icon: team.icon,
+          bio: lead.bio || lead.about || team.description || 'Dedicated to empowering the campus community with technical skills and opportunities.',
+          socials: lead.socials,
+          profileUrl: lead.username ? `/profile/${lead.username}` : '/teams',
+          isLead: true
+        });
+      }
+
+      if (coLead && coLead.name) {
+        leadershipShowcaseList.push({
+          _id: `${team._id}-colead`,
+          personId: coLead._id,
+          name: coLead.name,
+          username: coLead.username,
+          photo: coLead.photo,
+          imagePosition: coLead.imagePosition || 'center 50%',
+          roleTitle: coLeadRole,
+          teamName: team.name,
+          icon: team.icon,
+          bio: coLead.bio || coLead.about || team.description || 'Supporting domain initiatives and empowering fellow student developers.',
+          socials: coLead.socials,
+          profileUrl: coLead.username ? `/profile/${coLead.username}` : '/teams',
+          isLead: false
+        });
+      }
+    }
+  });
+
+  // Catch any additional custom domain teams configured in Admin
+  effectiveTeams.forEach((team) => {
+    const isAlreadyIncluded = leadershipShowcaseList.some(l => l.teamName?.toLowerCase() === team.name?.toLowerCase());
+    if (!isAlreadyIncluded) {
+      const lead = normalizePerson(team.lead || team.leadRef, 'Lead');
+      const coLead = normalizePerson(team.coLead || team.coLeadRef, 'Co-Lead');
+      const { leadRole, coLeadRole } = getDomainRoleTitles(team.name);
+
+      if (lead && lead.name) {
+        leadershipShowcaseList.push({
+          _id: `${team._id}-lead`,
+          personId: lead._id,
+          name: lead.name,
+          username: lead.username,
+          photo: lead.photo,
+          imagePosition: lead.imagePosition || 'center 50%',
+          roleTitle: leadRole,
+          teamName: team.name,
+          icon: team.icon,
+          bio: lead.bio || lead.about || team.description || 'Dedicated to empowering the campus community with technical skills and opportunities.',
+          socials: lead.socials,
+          profileUrl: lead.username ? `/profile/${lead.username}` : '/teams',
+          isLead: true
+        });
+      }
+
+      if (coLead && coLead.name) {
+        leadershipShowcaseList.push({
+          _id: `${team._id}-colead`,
+          personId: coLead._id,
+          name: coLead.name,
+          username: coLead.username,
+          photo: coLead.photo,
+          imagePosition: coLead.imagePosition || 'center 50%',
+          roleTitle: coLeadRole,
+          teamName: team.name,
+          icon: team.icon,
+          bio: coLead.bio || coLead.about || team.description || 'Supporting domain initiatives and empowering fellow student developers.',
+          socials: coLead.socials,
+          profileUrl: coLead.username ? `/profile/${coLead.username}` : '/teams',
+          isLead: false
+        });
+      }
+    }
+  });
+
+  // Determine live faculty list
+  const effectiveFaculty = liveFaculty.length > 0 ? liveFaculty : MOCK_FACULTY;
+  const facultyList = effectiveFaculty.map(f => ({
+    _id: f._id,
+    name: f.name || f.memberRef?.name,
+    designation: f.designation,
+    department: f.department || f.institution,
+    photo: f.photo || f.memberRef?.photo,
+    email: f.email || f.memberRef?.email,
+    imagePosition: f.imagePosition || 'top'
+  }));
 
   const allEvents = liveEvents.length > 0 ? liveEvents : MOCK_EVENTS;
   const isPastEvent = (e) => {
@@ -220,55 +448,46 @@ export default function Home() {
                 </div>
               </div>
 
-              {pinnedAnnouncement.linkUrl ? (
-                <a
-                  href={pinnedAnnouncement.linkUrl}
-                  target={pinnedAnnouncement.linkUrl.startsWith('http') ? '_blank' : '_self'}
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 font-bold text-xs text-[#2f9e44] hover:text-white flex-shrink-0 bg-white/10 hover:bg-[#2f9e44] px-3.5 py-1.5 rounded-lg border border-[#2f9e44]/40 transition-all shadow-sm"
-                >
-                  {pinnedAnnouncement.linkLabel || 'Apply Now'} <ArrowRight className="w-3.5 h-3.5" />
-                </a>
-              ) : (
-                <Link
-                  to="/community"
-                  className="flex items-center gap-1.5 font-bold text-xs text-[#2f9e44] hover:text-white flex-shrink-0 bg-white/10 hover:bg-[#2f9e44] px-3.5 py-1.5 rounded-lg border border-[#2f9e44]/40 transition-all shadow-sm"
-                >
-                  View Community <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              )}
+              <button
+                onClick={() =>
+                  handleLinkAction(pinnedAnnouncement.linkUrl || '/community', {
+                    navigate,
+                    openEmbedModal: (url) => openEmbedModal(url, pinnedAnnouncement.title),
+                    title: pinnedAnnouncement.title
+                  })
+                }
+                className="flex items-center gap-1.5 font-bold text-xs text-[#2f9e44] hover:text-white flex-shrink-0 bg-white/10 hover:bg-[#2f9e44] px-3.5 py-1.5 rounded-lg border border-[#2f9e44]/40 transition-all shadow-sm cursor-pointer"
+              >
+                <span>{pinnedAnnouncement.linkLabel || (pinnedAnnouncement.linkUrl ? 'Apply Now' : 'View Community')}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
 
             {/* Mobile View (< 640px) — Compact Horizontal Announcement Strip */}
-            {(() => {
-              const targetUrl = pinnedAnnouncement.linkUrl || '/community';
-              const isExternal = pinnedAnnouncement.linkUrl && pinnedAnnouncement.linkUrl.startsWith('http');
-              const ContentWrapper = isExternal ? 'a' : Link;
-              const wrapperProps = isExternal 
-                ? { href: targetUrl, target: '_blank', rel: 'noopener noreferrer' } 
-                : { to: targetUrl };
-
-              return (
-                <ContentWrapper 
-                  {...wrapperProps}
-                  className="sm:hidden flex items-start gap-2.5 text-left py-0.5 group cursor-pointer"
-                >
-                  <div className="pt-0.5 flex-shrink-0 text-[#2f9e44]">
-                    <Pin className="w-4 h-4 fill-[#2f9e44]" />
-                  </div>
-                  <div className="space-y-0.5 min-w-0 flex-1">
-                    <h4 className="font-bold text-white text-sm leading-snug group-hover:text-[#2f9e44] transition-colors">
-                      {pinnedAnnouncement.title}
-                    </h4>
-                    {pinnedAnnouncement.description && (
-                      <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed font-normal">
-                        {pinnedAnnouncement.description}
-                      </p>
-                    )}
-                  </div>
-                </ContentWrapper>
-              );
-            })()}
+            <div
+              onClick={() =>
+                handleLinkAction(pinnedAnnouncement.linkUrl || '/community', {
+                  navigate,
+                  openEmbedModal: (url) => openEmbedModal(url, pinnedAnnouncement.title),
+                  title: pinnedAnnouncement.title
+                })
+              }
+              className="sm:hidden flex items-start gap-2.5 text-left py-0.5 group cursor-pointer"
+            >
+              <div className="pt-0.5 flex-shrink-0 text-[#2f9e44]">
+                <Pin className="w-4 h-4 fill-[#2f9e44]" />
+              </div>
+              <div className="space-y-0.5 min-w-0 flex-1">
+                <h4 className="font-bold text-white text-sm leading-snug group-hover:text-[#2f9e44] transition-colors">
+                  {pinnedAnnouncement.title}
+                </h4>
+                {pinnedAnnouncement.description && (
+                  <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed font-normal">
+                    {pinnedAnnouncement.description}
+                  </p>
+                )}
+              </div>
+            </div>
           </section>
         )}
 
@@ -315,10 +534,10 @@ export default function Home() {
 
         {/* ─── 3. CAMPUS MANTRI (STATIC) ──────────────────────────────────── */}
         {currentMantri && (
-          <section className="py-12 px-4 sm:px-6 lg:px-8">
+          <section className="py-10 sm:py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
-              <TechCard className="p-8 sm:p-12 border-[#2f9e44]/50 bg-gradient-to-br from-[#121721] via-[#0a0d12] to-[#142e16]">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+              <TechCard className="p-6 sm:p-10 lg:p-12 border-[#2f9e44]/50 bg-gradient-to-br from-[#121721] via-[#0a0d12] to-[#142e16] shadow-2xl rounded-2xl">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-center">
                   
                   {/* Photo & Badge */}
                   <div className="flex flex-col items-center text-center">
@@ -327,9 +546,9 @@ export default function Home() {
                       alt={`${currentMantri.name}, Campus Mantri`}
                       loading="lazy"
                       style={{ objectPosition: currentMantri.imagePosition || 'center top' }}
-                      className="w-36 h-40 sm:w-40 sm:h-44 rounded-2xl object-cover border-2 border-[#2f9e44] shadow-xl"
+                      className="w-32 h-36 sm:w-40 sm:h-44 rounded-2xl object-cover border-2 border-[#2f9e44] shadow-xl flex-shrink-0"
                     />
-                    <h3 className="text-2xl font-extrabold text-white mt-4">{currentMantri.name}</h3>
+                    <h3 className="text-xl sm:text-2xl font-extrabold text-white mt-3 sm:mt-4 leading-tight">{currentMantri.name}</h3>
                     <div className="flex items-center gap-2 mt-2">
                       <span className="text-xs font-mono font-bold text-[#2f9e44] uppercase tracking-wider bg-[#2f9e44]/15 border border-[#2f9e44]/30 px-3 py-1 rounded-md flex items-center gap-1">
                         <ShieldCheck className="w-3.5 h-3.5" /> Campus Mantri • Session {currentMantri.tenure || currentMantri.session}
@@ -338,10 +557,10 @@ export default function Home() {
                   </div>
 
                   {/* Vision & Links */}
-                  <div className="md:col-span-2 space-y-5 text-center md:text-left">
+                  <div className="md:col-span-2 space-y-4 sm:space-y-5 text-center md:text-left min-w-0">
                     <div>
-                      <h4 className="text-xl font-bold text-white">Campus Mantri Vision</h4>
-                      <p className="text-sm sm:text-base text-gray-300 leading-relaxed italic mt-2 bg-[#0a0d12]/80 p-4 rounded-2xl border border-[#30363d]">
+                      <h4 className="text-lg sm:text-xl font-bold text-white">Campus Mantri Vision</h4>
+                      <p className="text-xs sm:text-sm text-gray-300 leading-relaxed italic mt-2 bg-[#0a0d12]/80 p-4 rounded-2xl border border-[#30363d]">
                         "{currentMantri.about}"
                       </p>
                     </div>
@@ -350,17 +569,17 @@ export default function Home() {
                       {currentMantri.socials && (
                         <div className="flex flex-wrap justify-center md:justify-start gap-2">
                           {currentMantri.socials.email && (
-                            <a href={`mailto:${currentMantri.socials.email}`} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-300 hover:text-white flex items-center gap-1.5 bg-[#18202c] px-3 py-1.5 rounded-lg border border-[#30363d]">
+                            <a href={`mailto:${currentMantri.socials.email}`} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-300 hover:text-white flex items-center gap-1.5 bg-[#18202c] px-3 py-1.5 rounded-lg border border-[#30363d] transition-colors hover:bg-[#2f9e44]">
                               <Mail className="w-3.5 h-3.5 text-[#2f9e44]" /> Email
                             </a>
                           )}
                           {currentMantri.socials.linkedin && (
-                            <a href={currentMantri.socials.linkedin} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-300 hover:text-white flex items-center gap-1.5 bg-[#18202c] px-3 py-1.5 rounded-lg border border-[#30363d]">
+                            <a href={currentMantri.socials.linkedin} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-300 hover:text-white flex items-center gap-1.5 bg-[#18202c] px-3 py-1.5 rounded-lg border border-[#30363d] transition-colors hover:bg-[#0077b5]">
                               <Linkedin className="w-3.5 h-3.5 text-[#0077b5]" /> LinkedIn
                             </a>
                           )}
                           {currentMantri.socials.instagram && (
-                            <a href={currentMantri.socials.instagram} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-300 hover:text-white flex items-center gap-1.5 bg-[#18202c] px-3 py-1.5 rounded-lg border border-[#30363d]">
+                            <a href={currentMantri.socials.instagram} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-300 hover:text-white flex items-center gap-1.5 bg-[#18202c] px-3 py-1.5 rounded-lg border border-[#30363d] transition-colors hover:bg-[#e1306c]">
                               <Instagram className="w-3.5 h-3.5 text-[#e1306c]" /> Instagram
                             </a>
                           )}
@@ -383,73 +602,116 @@ export default function Home() {
           </section>
         )}
 
-        {/* ─── 4. MEET OUR TEAMS (TECH SHOWCASE STRIP: RIGHT → LEFT) ──────── */}
-        {teamsList && teamsList.length > 0 && (
-          <section className="py-12 bg-[#121721]/40 border-y border-[#30363d] px-4 sm:px-6 lg:px-8 space-y-6">
+        {/* ─── 3.5. LEADERSHIP SHOWCASE (INFINITE HORIZONTAL CAROUSEL) ──────── */}
+        {leadershipShowcaseList && leadershipShowcaseList.length > 0 && (
+          <section className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 space-y-6">
             <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
               <div>
-                <span className="tech-eyebrow">OUR TEAMS</span>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">Our Teams</h2>
-                <p className="text-xs sm:text-sm text-gray-400 mt-0.5">Student leaders driving technical, creative, and operational initiatives.</p>
+                <span className="tech-eyebrow">LEADERSHIP SHOWCASE</span>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">Campus Leadership</h2>
+                <p className="text-xs sm:text-sm text-gray-400 mt-0.5">Meet the student leads guiding our active domain initiatives.</p>
               </div>
-              <Link to="/teams" className="text-xs font-bold text-[#2f9e44] hover:underline flex items-center gap-1 flex-shrink-0">
-                Meet the Full Team <ChevronRight className="w-4 h-4" />
+              <Link to="/teams" className="text-xs font-bold text-[#2f9e44] hover:underline flex items-center gap-1.5 flex-shrink-0 bg-[#2f9e44]/10 hover:bg-[#2f9e44]/20 border border-[#2f9e44]/30 px-3 py-1.5 rounded-xl transition-all">
+                <span>View All Teams</span>
+                <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
 
-            {/* Marquee Container: RIGHT → LEFT */}
-            <InfiniteMarquee direction="left" duration={35} gapClass="gap-4 sm:gap-5">
-              {teamsList.map((t) => {
-                const IconComponent = getTeamIcon(t.icon);
-                const lead = t.lead;
-                const coLead = t.coLead;
+            {/* Continuous Seamless Infinite Loop Marquee (Leftward continuous motion) */}
+            <InfiniteMarquee direction="left" duration={45} gapClass="gap-5 sm:gap-6">
+              {leadershipShowcaseList.map((leader, idx) => {
+                const IconComponent = getTeamIcon(leader.icon);
 
                 return (
                   <TechCard
-                    key={t._id}
-                    className="w-[82vw] sm:w-80 flex-shrink-0 snap-start p-4 sm:p-5 bg-[#0a0d12] border-[#30363d] hover:border-[#2f9e44]/60 flex flex-col justify-between space-y-3 shadow-lg"
+                    key={`${leader._id}-${idx}`}
+                    className="w-[82vw] sm:w-[320px] md:w-[500px] lg:w-[540px] flex-shrink-0 snap-start p-5 sm:p-6 border-[#2f9e44]/40 bg-gradient-to-br from-[#121721] via-[#0a0d12] to-[#142e16] flex flex-col justify-between space-y-4 shadow-xl rounded-2xl group transition-all"
                   >
-                    {/* Team Header */}
-                    <div className="flex items-center gap-3 pb-2 border-b border-[#30363d]/60">
-                      <div className="p-2 rounded-xl bg-[#2f9e44]/15 text-[#2f9e44] border border-[#2f9e44]/30 flex-shrink-0">
-                        <IconComponent className="w-4 h-4" />
+                    {/* Domain Header: Team Icon + EXACT Team Name */}
+                    <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#30363d]/80">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="p-2 rounded-xl bg-[#2f9e44]/15 text-[#2f9e44] border border-[#2f9e44]/30 flex-shrink-0 group-hover:scale-105 transition-transform">
+                          <IconComponent className="w-4 h-4" />
+                        </div>
+                        <h3 className="text-sm sm:text-base font-bold text-white truncate leading-tight group-hover:text-[#2f9e44] transition-colors">
+                          {leader.teamName}
+                        </h3>
                       </div>
-                      <h3 className="text-sm sm:text-base font-bold text-white truncate">{t.name}</h3>
+
+                      <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded uppercase flex-shrink-0 ${leader.isLead ? 'bg-[#2f9e44] text-white' : 'bg-[#18202c] text-gray-300 border border-[#30363d]'}`}>
+                        {leader.isLead ? 'Lead' : 'Co-Lead'}
+                      </span>
                     </div>
 
-                    {/* Member Entries (Simple Clean Rows) */}
-                    <div className="space-y-2">
-                      {lead && (
-                        <div className="flex items-center gap-3 py-0.5">
-                          <img
-                            src={lead.photo}
-                            alt={lead.name}
-                            loading="lazy"
-                            style={{ objectPosition: lead.imagePosition || 'top' }}
-                            className="w-9 h-11 sm:w-10 sm:h-12 rounded-lg object-cover border border-[#2f9e44] flex-shrink-0 shadow-sm"
-                          />
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-white truncate">{lead.name}</p>
-                            <p className="text-[10px] text-[#2f9e44] font-semibold truncate">{lead.title || 'Lead'}</p>
-                          </div>
-                        </div>
-                      )}
+                    {/* Responsive Member Layout: PORTRAIT on Mobile (<md) → LANDSCAPE on Laptop/Desktop (>=md) */}
+                    <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-4 md:gap-4 lg:gap-5 min-w-0 flex-1">
+                      {/* Member Portrait (Centered on Mobile, Left-aligned on Desktop) */}
+                      <img
+                        src={leader.photo}
+                        alt={`${leader.name}, ${leader.roleTitle}`}
+                        loading="lazy"
+                        style={{ objectPosition: leader.imagePosition || 'center 50%' }}
+                        className={`w-28 h-32 sm:w-32 sm:h-36 md:w-32 md:h-38 lg:w-34 lg:h-40 rounded-2xl object-cover border-2 shadow-xl flex-shrink-0 mx-auto md:mx-0 ${leader.isLead ? 'border-[#2f9e44]' : 'border-gray-600'}`}
+                      />
 
-                      {coLead && (
-                        <div className="flex items-center gap-3 py-0.5">
-                          <img
-                            src={coLead.photo}
-                            alt={coLead.name}
-                            loading="lazy"
-                            style={{ objectPosition: coLead.imagePosition || 'top' }}
-                            className="w-9 h-11 sm:w-10 sm:h-12 rounded-lg object-cover border border-[#30363d] flex-shrink-0 shadow-sm"
-                          />
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-white truncate">{coLead.name}</p>
-                            <p className="text-[10px] text-gray-400 font-semibold truncate">{coLead.title || 'Co-Lead'}</p>
+                      {/* Member Details + Bio (Below image on Mobile, Right-aligned on Desktop) */}
+                      <div className="min-w-0 flex-1 flex flex-col justify-between space-y-2.5 w-full">
+                        <div>
+                          <h4 className="text-base sm:text-lg md:text-xl font-bold text-white truncate leading-tight">
+                            {leader.name}
+                          </h4>
+                          <p className="text-[11px] font-mono text-gray-400 truncate mt-0.5">@{leader.username || 'user'}</p>
+
+                          <div className="mt-1.5">
+                            <span className="text-[10px] sm:text-xs font-mono font-bold text-[#2f9e44] uppercase tracking-wider bg-[#2f9e44]/15 border border-[#2f9e44]/30 px-2.5 py-0.5 rounded-md inline-block">
+                              {leader.roleTitle}
+                            </span>
                           </div>
                         </div>
-                      )}
+
+                        {/* Vision / Bio Quote Container (Constrained, Non-clipped) */}
+                        <div className="bg-[#0a0d12]/90 p-2.5 sm:p-3 rounded-xl border border-[#30363d] overflow-hidden">
+                          <p className="text-xs text-gray-300 leading-relaxed italic line-clamp-3">
+                            "{leader.bio}"
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Socials & Profile Action (Clean bottom rail) */}
+                    <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#30363d]/80">
+                      {leader.socials ? (
+                        <div className="flex items-center gap-1.5">
+                          {leader.socials.email && (
+                            <a href={`mailto:${leader.socials.email}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#2f9e44] transition-colors border border-[#30363d]" title="Email">
+                              <Mail className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          {leader.socials.linkedin && (
+                            <a href={leader.socials.linkedin.startsWith('http') ? leader.socials.linkedin : `https://linkedin.com/in/${leader.socials.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#0077b5] transition-colors border border-[#30363d]" title="LinkedIn">
+                              <Linkedin className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          {leader.socials.instagram && (
+                            <a href={leader.socials.instagram.startsWith('http') ? leader.socials.instagram : `https://instagram.com/${leader.socials.instagram}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#e1306c] transition-colors border border-[#30363d]" title="Instagram">
+                              <Instagram className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          {leader.socials.github && (
+                            <a href={leader.socials.github.startsWith('http') ? leader.socials.github : `https://github.com/${leader.socials.github}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-[#18202c] text-gray-300 hover:text-white hover:bg-gray-700 transition-colors border border-[#30363d]" title="GitHub">
+                              <Github className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </div>
+                      ) : <div />}
+
+                      <Link
+                        to={leader.profileUrl || '/teams'}
+                        className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#2f9e44] hover:text-white transition-colors bg-[#2f9e44]/10 hover:bg-[#2f9e44] px-3 py-1.5 rounded-xl border border-[#2f9e44]/30 ml-auto"
+                      >
+                        <span>Profile</span>
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </Link>
                     </div>
                   </TechCard>
                 );
@@ -457,6 +719,8 @@ export default function Home() {
             </InfiniteMarquee>
           </section>
         )}
+
+
 
         {/* ─── 5. UPCOMING EVENTS (LIVE TECH SESSIONS) ────────────────────── */}
         {upcomingEvents && upcomingEvents.length > 0 && (
@@ -697,36 +961,74 @@ export default function Home() {
           </section>
         )}
 
-        {/* ─── 8. LATEST ANNOUNCEMENTS BANNER (DYNAMIC BULLETIN) ─────────── */}
+        {/* ─── 8. LATEST ANNOUNCEMENTS BANNER (PREMIUM COMPACT BULLETIN) ─── */}
         {latestAnnouncement && (
-          <section className="py-8 bg-gradient-to-r from-[#1b5e20] via-[#0d2e10] to-[#0a0d12] border-y border-[#2f9e44]/40 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-4 text-center sm:text-left">
-                <div className="p-3 rounded-2xl bg-[#2f9e44] text-white hidden sm:block">
-                  <Megaphone className="w-6 h-6" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-mono font-bold text-[#2f9e44] bg-white/10 px-2.5 py-0.5 rounded uppercase tracking-widest border border-white/20">
-                    {latestAnnouncement.type || 'Latest Bulletin'}
+          <section className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+            <div className="max-w-5xl mx-auto relative z-10">
+              
+              {/* Premium Bulletin Container */}
+              <div className="relative rounded-2xl bg-gradient-to-br from-[#071511] via-[#0B211D] to-[#12281e] border border-[#2f9e44]/35 hover:border-[#2f9e44]/60 transition-all duration-300 p-6 sm:p-8 shadow-2xl space-y-5 overflow-hidden group">
+                
+                {/* Subtle Ambient Radial Glow */}
+                <div className="absolute -right-20 -top-20 w-80 h-80 bg-[#2f9e44]/12 rounded-full blur-3xl pointer-events-none" />
+
+                {/* Header Metadata Bar */}
+                <div className="flex items-center justify-between gap-3 text-xs font-mono relative z-10">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#2f9e44]/15 border border-[#2f9e44]/40 text-[#2f9e44] text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#2f9e44] animate-pulse" />
+                      📌 {latestAnnouncement.type?.toUpperCase() || 'ANNOUNCEMENT'}
+                    </span>
+                    <span className="text-[10px] text-gray-400 hidden sm:inline">• Official Bulletin</span>
+                  </div>
+
+                  <span className="text-[11px] text-gray-400">
+                    {latestAnnouncement.publishDate || latestAnnouncement.createdAt
+                      ? new Date(latestAnnouncement.publishDate || latestAnnouncement.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                      : 'Recently updated'}
                   </span>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mt-1">{latestAnnouncement.title}</h3>
-                  <p className="text-xs text-gray-300 font-medium max-w-2xl">{latestAnnouncement.description}</p>
                 </div>
+
+                {/* Body Content: Title & Clamped Description */}
+                <div className="space-y-2 relative z-10">
+                  <h3 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight leading-snug group-hover:text-[#2f9e44] transition-colors">
+                    {latestAnnouncement.title}
+                  </h3>
+                  {latestAnnouncement.description && (
+                    <p className="text-xs sm:text-sm text-gray-300 leading-relaxed font-normal line-clamp-2 sm:line-clamp-3">
+                      {latestAnnouncement.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Footer Action Area (GUARANTEED VISIBILITY & Touch Area) */}
+                <div className="pt-4 border-t border-[#30363d]/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10">
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-gray-400">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span>GeeksforGeeks Campus Body</span>
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      handleLinkAction(latestAnnouncement.linkUrl || '/community', {
+                        navigate,
+                        openEmbedModal: (url) => openEmbedModal(url, latestAnnouncement.title)
+                      })
+                    }
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#18261e] hover:bg-[#2f9e44] text-white text-xs font-bold font-mono border border-[#2f9e44]/50 flex items-center justify-center gap-2 transition-all shadow-md active:scale-98"
+                    aria-label={`${latestAnnouncement.linkLabel || 'Stay tuned'} - ${latestAnnouncement.title}`}
+                  >
+                    <span>{latestAnnouncement.linkLabel || (latestAnnouncement.linkUrl ? 'Stay tuned!' : 'Explore Community')}</span>
+                    {latestAnnouncement.linkUrl && (latestAnnouncement.linkUrl.startsWith('http') || latestAnnouncement.linkUrl.includes('forms')) ? (
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    ) : (
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+
               </div>
-              {latestAnnouncement.linkUrl ? (
-                <a
-                  href={latestAnnouncement.linkUrl}
-                  target={latestAnnouncement.linkUrl.startsWith('http') ? '_blank' : '_self'}
-                  rel="noopener noreferrer"
-                  className="px-5 py-2.5 rounded-xl bg-white text-[#0a0d12] hover:bg-[#2f9e44] hover:text-white font-bold text-xs flex items-center gap-2 transition-all flex-shrink-0"
-                >
-                  {latestAnnouncement.linkLabel || 'Learn More'} <ArrowRight className="w-4 h-4" />
-                </a>
-              ) : (
-                <Link to="/community" className="px-5 py-2.5 rounded-xl bg-white text-[#0a0d12] hover:bg-[#2f9e44] hover:text-white font-bold text-xs flex items-center gap-2 transition-all flex-shrink-0">
-                  Explore Community <ArrowRight className="w-4 h-4" />
-                </Link>
-              )}
+
             </div>
           </section>
         )}

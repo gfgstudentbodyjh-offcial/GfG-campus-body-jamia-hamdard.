@@ -8,7 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function AdminSidebar({ isLight, toggleTheme }) {
   const location = useLocation();
-  const { logout, user } = useAuth();
+  const { logout = () => {}, user = null } = useAuth() || {};
 
   const activeNavGroups = [
     {
@@ -21,6 +21,13 @@ export default function AdminSidebar({ isLight, toggleTheme }) {
       group: 'Security',
       items: [
         { name: 'Administrators', path: '/admin/administrators', icon: ShieldCheck, isV1: true }
+      ]
+    },
+    {
+      group: 'Leadership & Teams',
+      items: [
+        { name: 'Campus Mantri', path: '/admin/mantri', icon: Shield, isV1: true },
+        { name: 'Teams & Leads', path: '/admin/teams', icon: Layers, isV1: true }
       ]
     },
     {
@@ -40,12 +47,10 @@ export default function AdminSidebar({ isLight, toggleTheme }) {
       ]
     },
     {
-      group: 'Future CMS (Phase 2)',
+      group: 'System Settings',
       items: [
-        { name: 'Homepage Copy', path: '/admin/hero-settings', icon: Sliders, disabled: true },
         { name: 'Faculty Coordinators', path: '/admin/faculty', icon: Award, disabled: true },
-        { name: 'Campus Mantri', path: '/admin/mantri', icon: Shield, disabled: true },
-        { name: 'Teams', path: '/admin/teams', icon: Layers, disabled: true }
+        { name: 'Homepage Copy', path: '/admin/hero-settings', icon: Sliders, disabled: true }
       ]
     }
   ];
