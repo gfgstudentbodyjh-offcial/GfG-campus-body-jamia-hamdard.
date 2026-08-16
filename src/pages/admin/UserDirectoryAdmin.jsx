@@ -55,7 +55,7 @@ export default function UserDirectoryAdmin() {
 
   // Fetch paginated user list on filter/page change
   useEffect(() => {
-    loadUsers(pagination.page);
+    loadUsers(pagination.page, users.length === 0);
   }, [debouncedSearch, roleFilter, statusFilter, pagination.page]);
 
   const loadStats = async () => {
@@ -69,8 +69,10 @@ export default function UserDirectoryAdmin() {
     }
   };
 
-  const loadUsers = async (page = 1) => {
-    setLoading(true);
+  const loadUsers = async (page = 1, isInitial = false) => {
+    if (isInitial && users.length === 0) {
+      setLoading(true);
+    }
     try {
       const res = await api.get('/admin/users', {
         params: {

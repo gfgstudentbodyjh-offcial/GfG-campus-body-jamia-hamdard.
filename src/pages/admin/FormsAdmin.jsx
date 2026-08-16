@@ -22,18 +22,21 @@ export default function FormsAdmin() {
   });
 
   useEffect(() => {
-    loadForms();
+    loadForms(true);
   }, []);
 
-  const loadForms = async () => {
-    setLoading(true);
+  const loadForms = async (isInitial = false) => {
+    if (isInitial && forms.length === 0) {
+      setLoading(true);
+    }
     try {
       const res = await api.get('/forms');
       setForms(res.data.data || []);
     } catch (err) {
-      console.warn(err);
+      console.warn('[FormsAdmin] Error loading forms:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleOpenAdd = () => {

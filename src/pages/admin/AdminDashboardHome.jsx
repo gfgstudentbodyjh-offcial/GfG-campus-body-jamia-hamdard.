@@ -26,18 +26,13 @@ export default function AdminDashboardHome() {
   const [announcements, setAnnouncements] = useState([]);
 
   useEffect(() => {
-    loadDashboardData();
-
-    // Revalidate data on window focus
-    const handleFocus = () => {
-      loadDashboardData();
-    };
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    loadDashboardData(true);
   }, []);
 
-  const loadDashboardData = async () => {
-    setLoading(true);
+  const loadDashboardData = async (isInitial = false) => {
+    if (isInitial && !stats.members.totalAccounts) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const [statsRes, eventsRes, annRes] = await Promise.all([
@@ -53,7 +48,9 @@ export default function AdminDashboardHome() {
       setAnnouncements(annRes.data?.data || []);
     } catch (err) {
       console.warn('[Admin Dashboard] Live data fetch error:', err);
-      setError('Failed to sync live MongoDB statistics.');
+      if (!stats.members.totalAccounts) {
+        setError('Failed to sync live MongoDB statistics.');
+      }
     } finally {
       setLoading(false);
     }

@@ -77,11 +77,13 @@ export default function TeamsAdmin() {
   const [searchConflict, setSearchConflict] = useState(false);
 
   useEffect(() => {
-    loadData();
+    loadData(true);
   }, []);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (isInitial = false) => {
+    if (isInitial && teams.length === 0) {
+      setLoading(true);
+    }
     try {
       const res = await api.get('/teams');
       const list = res.data.data || [];
@@ -89,8 +91,9 @@ export default function TeamsAdmin() {
       cacheService.set('teams', list);
     } catch (err) {
       console.warn('[TeamsAdmin] Error loading teams:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Member search handler (by Member ID, Username, Name, Email)

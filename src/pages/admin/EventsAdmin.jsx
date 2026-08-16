@@ -35,21 +35,27 @@ export default function EventsAdmin() {
   });
 
   useEffect(() => {
-    loadData();
-  }, [statusFilter]);
+    loadData(true);
+  }, []);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('/events', { params: { status: statusFilter } });
-      setEvents(res.data.data || []);
-    } catch (err) {
-      console.warn(err);
+  const loadData = async (isInitial = false) => {
+    if (isInitial && events.length === 0) {
+      setLoading(true);
     }
-    setLoading(false);
+    try {
+      const res = await api.get('/events');
+      const freshData = res.data.data || [];
+      setEvents(freshData);
+      cacheService.set('events', freshData);
+    } catch (err) {
+      console.warn('[EventsAdmin] Error loading events:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredEvents = events.filter(ev => {
+    if (statusFilter !== 'All' && ev.status !== statusFilter) return false;
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (
@@ -233,80 +239,133 @@ export default function EventsAdmin() {
         onFilterChange={setStatusFilter}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        columns={['Thumbnail & Event Title', 'Schedule Date', 'Venue', 'Status', 'Actions']}
-        renderRow={(ev) => (
-          <tr key={ev._id} className={`transition-colors ${
-            isLight ? 'hover:bg-slate-50/80 border-b border-gray-200' : 'hover:bg-[#0d1117]/60 border-b border-[#30363d]'
-          }`}>
-            <td className="px-6 py-4">
-              <div className="flex items-center gap-3">
+        gridCols="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+        renderCard={(ev) => {
+          const isCompleted = ev.status === 'Completed';
+
+          return (
+            <div
+              key={ev._id}
+              className={`rounded-2xl border overflow-hidden flex flex-col justify-between transition-all duration-200 hover:shadow-md ${
+                isLight
+                  ? 'bg-white border-gray-200 hover:border-[#2f9e44]/60 shadow-xs'
+                  : 'bg-[#121721] border-[#30363d] hover:border-[#2f9e44]/50'
+              }`}
+            >
+              {/* Event Thumbnail Banner */}
+              <div className="relative h-44 w-full bg-[#0d1117] overflow-hidden group">
                 <img
                   src={ev.banner || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=600&q=80'}
                   alt={ev.title}
-                  className="w-16 h-10 rounded-lg object-cover border flex-shrink-0 shadow-sm"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+
+                {/* Floating Status Badge */}
+                <div className="absolute top-3 left-3">
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase border shadow-md ${renderStatusBadge(ev.status)}`}>
+                    {ev.status || 'Upcoming'}
+                  </span>
+                </div>
+
+                {/* Schedule Date on bottom left */}
+                <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-[11px] font-mono font-bold text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10">
+                  <Calendar className="w-3.5 h-3.5 text-[#2f9e44]" />
+                  <span>{formatEventDate(ev.date)}</span>
+                </div>
+              </div>
+
+              {/* Event Content Details */}
+              <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
                 <div>
-                  <p className={`font-bold text-xs sm:text-sm ${isLight ? 'text-gray-900' : 'text-white'}`}>{ev.title}</p>
-                  <p className={`text-[10px] max-w-xs truncate ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>{ev.description}</p>
+                  <h3 className={`text-base font-extrabold line-clamp-1 leading-snug ${
+                    isLight ? 'text-gray-900' : 'text-white'
+                  }`}>
+                    {ev.title}
+                  </h3>
+
+                  {ev.venue && (
+                    <p className={`text-xs mt-1 flex items-center gap-1.5 truncate ${
+                      isLight ? 'text-gray-600' : 'text-gray-400'
+                    }`}>
+                      <span className="text-[#2f9e44]">📍</span> {ev.venue}
+                    </p>
+                  )}
+
+                  <p className={`text-xs mt-2 line-clamp-2 leading-relaxed ${
+                    isLight ? 'text-gray-600' : 'text-gray-400'
+                  }`}>
+                    {ev.description || 'No event description provided.'}
+                  </p>
+                </div>
+
+                {/* Action Bar Footer: [Mark Completed] [Edit] [Delete] */}
+                <div className="pt-3 border-t border-gray-200 dark:border-[#30363d]/80 flex items-center justify-between gap-2">
+                  {!isCompleted ? (
+                    <button
+                      onClick={() => handleMarkCompleted(ev._id)}
+                      className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border flex items-center gap-1.5 transition-all active:scale-95 ${
+                        isLight
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+                          : 'bg-[#2f9e44]/15 text-emerald-400 border-[#2f9e44]/30 hover:bg-[#2f9e44] hover:text-white'
+                      }`}
+                      title="Mark Event Completed"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Mark Done</span>
+                    </button>
+                  ) : (
+                    <span className="text-[10px] font-mono text-gray-500 italic">
+                      Archived in Past Events
+                    </span>
+                  )}
+
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    {ev.registrationLink && (
+                      <a
+                        href={ev.registrationLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`p-2 rounded-xl border transition-colors flex items-center justify-center ${
+                          isLight
+                            ? 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                            : 'bg-[#21262d] text-gray-300 border-[#30363d] hover:text-white'
+                        }`}
+                        title="Open Registration Link"
+                      >
+                        <LinkIcon className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+
+                    <button
+                      onClick={() => handleOpenEdit(ev)}
+                      className={`p-2 rounded-xl border transition-colors flex items-center justify-center ${
+                        isLight
+                          ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                          : 'bg-[#21262d] text-gray-200 border-[#363b42] hover:bg-[#30363d]'
+                      }`}
+                      title="Edit Event"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(ev._id)}
+                      className={`p-2 rounded-xl border transition-colors flex items-center justify-center ${
+                        isLight
+                          ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+                          : 'bg-red-500/10 text-red-400 border-red-500/25 hover:bg-red-500/20'
+                      }`}
+                      title="Delete Event"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </td>
-            <td className={`px-6 py-4 text-xs font-mono font-medium ${isLight ? 'text-gray-700' : 'text-gray-300'}`}>
-              {formatEventDate(ev.date)}
-            </td>
-            <td className={`px-6 py-4 text-xs ${isLight ? 'text-gray-600' : 'text-gray-400'}`}>{ev.venue || 'Jamia Hamdard'}</td>
-            <td className="px-6 py-4 whitespace-nowrap">
-              <span className={`inline-block whitespace-nowrap px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase border ${renderStatusBadge(ev.status)}`}>
-                {ev.status || 'Upcoming'}
-              </span>
-            </td>
-            <td className="px-6 py-4 text-center min-w-[150px]">
-              <div className="flex flex-col items-center justify-center gap-2">
-                {ev.status !== 'Completed' && (
-                  <button
-                    onClick={() => handleMarkCompleted(ev._id)}
-                    className={`w-[125px] h-[32px] px-2.5 rounded-full text-[11px] font-bold border flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 shadow-xs ${
-                      isLight
-                        ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
-                        : 'bg-[#2f9e44]/15 hover:bg-[#2f9e44]/30 text-emerald-400 border-[#2f9e44]/40'
-                    }`}
-                    title="Mark Event Completed"
-                    aria-label="Mark Event Completed"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
-                    <span>Mark Completed</span>
-                  </button>
-                )}
-                <div className="flex items-center justify-center gap-3">
-                  <button
-                    onClick={() => handleOpenEdit(ev)}
-                    className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 ${
-                      isLight
-                        ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300/80 shadow-xs'
-                        : 'bg-[#21262d] hover:bg-[#30363d] text-gray-200 border-[#363b42]'
-                    }`}
-                    title="Edit event"
-                    aria-label="Edit event"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(ev._id)}
-                    className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 ${
-                      isLight
-                        ? 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200/80 shadow-xs'
-                        : 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/25'
-                    }`}
-                    title="Delete event"
-                    aria-label="Delete event"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </td>
-          </tr>
-        )}
+            </div>
+          );
+        }}
       />
 
       {/* Create / Edit Event Modal */}

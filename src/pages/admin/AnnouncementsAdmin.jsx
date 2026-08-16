@@ -27,18 +27,21 @@ export default function AnnouncementsAdmin() {
   const typesList = ['Announcement', 'Opportunity', 'Event', 'Update', 'Important'];
 
   useEffect(() => {
-    loadAnnouncements();
+    loadAnnouncements(true);
   }, []);
 
-  const loadAnnouncements = async () => {
-    setLoading(true);
+  const loadAnnouncements = async (isInitial = false) => {
+    if (isInitial && announcements.length === 0) {
+      setLoading(true);
+    }
     try {
       const res = await api.get('/announcements', { params: { scope: 'admin' } });
       setAnnouncements(res.data.data || []);
     } catch (err) {
-      console.warn(err);
+      console.warn('[AnnouncementsAdmin] Error loading announcements:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const filteredAnnouncements = announcements.filter(a => {

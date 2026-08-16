@@ -13,19 +13,33 @@ export default function MediaLibraryAdmin() {
   const folders = ['All', 'Faculty', 'Campus Mantri', 'Members', 'Teams', 'Events', 'Gallery', 'Resources', 'General'];
 
   useEffect(() => {
-    loadAssets();
-  }, [folder, search]);
+    loadAssets(true);
+  }, []);
 
-  const loadAssets = async () => {
-    setLoading(true);
+  const loadAssets = async (isInitial = false) => {
+    if (isInitial && assets.length === 0) {
+      setLoading(true);
+    }
     try {
-      const res = await api.get('/media', { params: { folder: folder === 'All' ? '' : folder, search } });
+      const res = await api.get('/media');
       setAssets(res.data.data || []);
     } catch (err) {
-      console.warn(err);
+      console.warn('[MediaLibraryAdmin] Error loading assets:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
+
+  const filteredAssets = assets.filter(a => {
+    if (folder !== 'All' && a.folder !== folder) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
+      const matchName = (a.name || '').toLowerCase().includes(q);
+      const matchFolder = (a.folder || '').toLowerCase().includes(q);
+      if (!matchName && !matchFolder) return false;
+    }
+    return true;
+  });
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete media asset?')) return;
@@ -88,11 +102,11 @@ export default function MediaLibraryAdmin() {
       <div className="bg-[#161b22] border border-[#30363d] p-6 rounded-2xl">
         {loading ? (
           <div className="py-12 text-center text-gray-400">Loading Media Library Assets...</div>
-        ) : assets.length === 0 ? (
+        ) : filteredAssets.length === 0 ? (
           <div className="py-12 text-center text-gray-500 text-sm">No media assets stored under "{folder}"</div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {assets.map(item => (
+            {filteredAssets.map(item => (
               <div key={item._id} className="group relative rounded-xl overflow-hidden border border-[#30363d] aspect-square bg-[#0d1117]">
                 <img src={item.url} alt={item.filename} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-end">

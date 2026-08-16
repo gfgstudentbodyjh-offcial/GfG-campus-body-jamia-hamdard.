@@ -43,21 +43,25 @@ export default function GalleryAdmin() {
   });
 
   useEffect(() => {
-    loadItems();
-  }, [albumFilter]);
+    loadItems(true);
+  }, []);
 
-  const loadItems = async () => {
-    setLoading(true);
+  const loadItems = async (isInitial = false) => {
+    if (isInitial && items.length === 0) {
+      setLoading(true);
+    }
     try {
-      const res = await api.get('/gallery', { params: { album: albumFilter } });
+      const res = await api.get('/gallery');
       setItems(res.data.data || []);
     } catch (err) {
-      console.warn(err);
+      console.warn('[GalleryAdmin] Error loading gallery items:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const filteredItems = items.filter(g => {
+    if (albumFilter !== 'All' && g.album !== albumFilter) return false;
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (

@@ -42,29 +42,38 @@ export default function MembersAdmin() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadMembers();
+    loadMembers(true);
+  }, []);
 
-    const handleFocus = () => {
-      loadMembers();
-    };
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [search, roleFilter]);
-
-  const loadMembers = async () => {
-    setLoading(true);
+  const loadMembers = async (isInitial = false) => {
+    if (isInitial && members.length === 0) {
+      setLoading(true);
+    }
     setError(null);
     try {
-      const res = await api.get('/members', { params: { search, role: roleFilter === 'All' ? '' : roleFilter } });
+      const res = await api.get('/members');
       setMembers(res.data?.data || []);
     } catch (err) {
       console.warn('[MembersAdmin] Fetch error:', err);
-      setError('Failed loading live MongoDB member directory.');
+      if (members.length === 0) {
+        setError('Failed loading live MongoDB member directory.');
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const filteredMembers = members.filter(m => {
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
+      const matchName = (m.name || '').toLowerCase().includes(q);
+      const matchEmail = (m.email || '').toLowerCase().includes(q);
+      const matchUser = (m.username || '').toLowerCase().includes(q);
+      const matchId = (m.membershipId || '').toLowerCase().includes(q);
+      const matchRole = (m.role || '').toLowerCase().includes(q);
+      const matchTeam = (m.teamName || '').toLowerCase().includes(q);
+      if (!matchName && !matchEmail && !matchUser && !matchId && !matchRole && !matchTeam) return false;
+    }
     if (roleFilter === 'Visitors') return m.accountType === 'Visitor' || m.role === 'Visitor';
     if (roleFilter === 'Members') return m.accountType === 'Member';
     if (roleFilter === 'Leads') return (m.role || '').toLowerCase().endsWith('lead') || (m.role || '').toLowerCase().includes('lead');
@@ -232,86 +241,130 @@ export default function MembersAdmin() {
         onFilterChange={setRoleFilter}
         searchTerm={search}
         onSearchChange={setSearch}
-        columns={['Member Profile', 'Email', 'Account Type', 'Official Role', 'Membership Status', 'Joined Date', 'Actions']}
-        renderRow={(m) => (
-          <tr key={m._id} className={`transition-colors ${
-            isLight ? 'hover:bg-slate-50/80 border-b border-gray-200' : 'hover:bg-[#0d1117]/60 border-b border-[#30363d]'
-          }`}>
-            <td className="px-6 py-4">
-              <div className="flex items-center gap-3">
-                <img
-                  src={m.photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80'}
-                  alt={m.name}
-                  className="w-10 h-10 rounded-full object-cover border border-[#2f9e44] flex-shrink-0"
-                />
-                <div>
-                  <p className={`font-bold text-xs sm:text-sm ${isLight ? 'text-gray-900' : 'text-white'}`}>{m.name}</p>
-                  {m.membershipId && (
-                    <p className="text-[10px] text-[#2f9e44] font-mono font-bold">{m.membershipId}</p>
+        gridCols="grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4"
+        renderCard={(m) => {
+          const isVerifiedMember = m.accountType === 'Member';
+          const isActive = m.membershipStatus === 'active' || m.status === 'Active';
+
+          return (
+            <div
+              key={m._id}
+              className={`p-5 rounded-2xl border flex flex-col justify-between space-y-4 transition-all duration-200 hover:shadow-md ${
+                isLight
+                  ? 'bg-white border-gray-200 hover:border-[#2f9e44]/60 shadow-xs'
+                  : 'bg-[#121721] border-[#30363d] hover:border-[#2f9e44]/50'
+              }`}
+            >
+              {/* Profile Image, Name, Membership ID */}
+              <div className="flex items-start gap-3.5">
+                <div className="relative flex-shrink-0">
+                  <img
+                    src={m.photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80'}
+                    alt={m.name}
+                    className="w-14 h-14 rounded-full object-cover border-2 border-[#2f9e44] shadow-xs"
+                  />
+                  {isVerifiedMember && (
+                    <div className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-[#2f9e44] text-white shadow-xs" title="Verified Member">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                    </div>
                   )}
                 </div>
+
+                <div className="min-w-0 flex-1">
+                  <h3 className={`text-sm font-extrabold leading-snug break-words ${isLight ? 'text-gray-900' : 'text-white'}`}>
+                    {m.name}
+                  </h3>
+                  <p className="text-[11px] text-[#2f9e44] font-mono font-bold mt-0.5 truncate">
+                    {m.membershipId || 'No ID Assigned'}
+                  </p>
+                  <p className={`text-[11px] font-mono mt-0.5 truncate ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+                    @{m.username || (m.email ? m.email.split('@')[0] : 'user')}
+                  </p>
+                </div>
               </div>
-            </td>
-            <td className={`px-6 py-4 text-xs ${isLight ? 'text-gray-700' : 'text-gray-300'}`}>{m.email}</td>
-            <td className="px-6 py-4">
-              <span className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
-                m.accountType === 'Member'
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30'
-                  : 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30'
+
+              {/* Email */}
+              <div className={`text-xs break-all py-1.5 px-2.5 rounded-xl border font-mono ${
+                isLight ? 'bg-gray-50 text-gray-700 border-gray-200' : 'bg-[#0d1117] text-gray-300 border-[#30363d]/80'
               }`}>
-                {m.accountType || 'Visitor'}
-              </span>
-            </td>
-            <td className={`px-6 py-4 text-xs font-bold ${isLight ? 'text-gray-900' : 'text-white'}`}>{m.role || 'Visitor'}</td>
-            <td className="px-6 py-4 whitespace-nowrap">
-              <span className={`inline-block whitespace-nowrap px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase border ${
-                m.membershipStatus === 'active' || m.status === 'Active'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-[#2f9e44]/20 dark:text-[#2f9e44] dark:border-[#2f9e44]/30'
-                  : m.membershipStatus === 'suspended'
-                  ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30'
-                  : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-gray-800 dark:text-gray-400'
-              }`}>
-                {m.membershipStatus || m.status || 'pending'}
-              </span>
-            </td>
-            <td className={`px-6 py-4 text-xs font-mono ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
-              {formatEventDate(m.createdAt || m.issueDate)}
-            </td>
-            <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-              <button
-                onClick={() => handleOpenEdit(m)}
-                className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
-                  isLight
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                    : 'bg-[#2f9e44]/20 text-[#2f9e44] border-[#2f9e44]/30 hover:bg-[#2f9e44] hover:text-white'
-                }`}
-                title="Promote / Manage Membership & Role"
-              >
-                Change Membership
-              </button>
-              <button
-                onClick={() => setInspectMember(m)}
-                className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-colors inline-flex items-center gap-1 ${
-                  isLight
-                    ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
-                    : 'bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500 hover:text-white'
-                }`}
-                title="Inspect Registered Signup Information"
-              >
-                <Eye className="w-3 h-3" /> Inspect
-              </button>
-              <button
-                onClick={() => handleDelete(m._id)}
-                className={`p-1.5 rounded-lg border transition-colors ${
-                  isLight ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'bg-[#21262d] text-red-400 border-[#30363d] hover:bg-red-500/20'
-                }`}
-                title="Delete Member"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </td>
-          </tr>
-        )}
+                {m.email}
+              </div>
+
+              {/* Account Type & Official Role */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
+                  isVerifiedMember
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-[#2f9e44]/20 dark:text-[#2f9e44] dark:border-[#2f9e44]/30'
+                    : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30'
+                }`}>
+                  {m.accountType || 'Visitor'}
+                </span>
+
+                <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold truncate max-w-[150px] border ${
+                  isLight ? 'bg-slate-100 text-slate-800 border-slate-200' : 'bg-[#21262d] text-gray-200 border-[#30363d]'
+                }`}>
+                  {m.role || 'Visitor'}
+                </span>
+              </div>
+
+              {/* Status Badge & Joined Date */}
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border ${
+                  isActive
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-[#2f9e44]/20 dark:text-[#2f9e44] dark:border-[#2f9e44]/30'
+                    : m.membershipStatus === 'suspended'
+                    ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30'
+                    : 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400'
+                }`}>
+                  {m.membershipStatus || m.status || 'pending'}
+                </span>
+
+                <span className={`text-[10px] font-mono ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+                  Joined: {formatEventDate(m.createdAt || m.issueDate)}
+                </span>
+              </div>
+
+              {/* Action Buttons: [Change Membership] [Inspect] [Delete] */}
+              <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-200 dark:border-[#30363d]/80">
+                <button
+                  onClick={() => handleOpenEdit(m)}
+                  className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold border transition-all text-center ${
+                    isLight
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+                      : 'bg-[#2f9e44]/15 text-[#2f9e44] border-[#2f9e44]/30 hover:bg-[#2f9e44] hover:text-white'
+                  }`}
+                  title="Promote / Manage Membership & Role"
+                >
+                  Change Membership
+                </button>
+
+                <button
+                  onClick={() => setInspectMember(m)}
+                  className={`p-1.5 rounded-xl border transition-colors flex items-center justify-center ${
+                    isLight
+                      ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                      : 'bg-blue-500/15 text-blue-400 border-blue-500/30 hover:bg-blue-500 hover:text-white'
+                  }`}
+                  title="Inspect Signup Details"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  onClick={() => handleDelete(m._id)}
+                  className={`p-1.5 rounded-xl border transition-colors flex items-center justify-center ${
+                    isLight
+                      ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+                      : 'bg-red-500/10 text-red-400 border-red-500/25 hover:bg-red-500/20'
+                  }`}
+                  title="Delete Member Record"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          );
+        }}
       />
 
       {/* Change Membership / Role Modal Drawer */}

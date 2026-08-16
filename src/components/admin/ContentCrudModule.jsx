@@ -14,6 +14,8 @@ export default function ContentCrudModule({
   searchTerm = '',
   onSearchChange,
   renderRow,
+  renderCard,
+  gridCols = 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4',
   columns = []
 }) {
   const { isLight } = useAdminTheme();
@@ -83,22 +85,31 @@ export default function ContentCrudModule({
         )}
       </div>
 
-      {/* Content Table Container */}
+      {/* Content Container (Card Grid or Table) */}
       <div className={`rounded-2xl border overflow-hidden transition-colors ${
         isLight
           ? 'bg-white border-gray-200 shadow-sm'
           : 'bg-[#161b22] border-[#30363d] shadow-xl'
       }`}>
         {loading ? (
-          <div className={`p-12 text-center text-xs font-semibold ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+          <div className={`p-16 text-center text-xs font-semibold ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+            <div className="w-8 h-8 border-2 border-[#2f9e44] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
             Loading {title}...
           </div>
         ) : items.length === 0 ? (
-          <div className={`p-12 text-center space-y-1 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+          <div className={`p-16 text-center space-y-1 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
             <p className="text-sm font-bold">No records found</p>
             <p className="text-xs">Click "Create New Record" to add your first item.</p>
           </div>
-        ) : (
+        ) : renderCard ? (
+          <div className={`p-5 sm:p-6 grid ${gridCols} gap-4 sm:gap-5`}>
+            {items.map((item, idx) => (
+              <React.Fragment key={item._id || idx}>
+                {renderCard(item)}
+              </React.Fragment>
+            ))}
+          </div>
+        ) : typeof renderRow === 'function' ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs font-medium">
               <thead className={`text-[10px] uppercase font-mono tracking-wider border-b ${
@@ -122,7 +133,7 @@ export default function ContentCrudModule({
               </tbody>
             </table>
           </div>
-        )}
+        ) : null}
       </div>
 
     </div>

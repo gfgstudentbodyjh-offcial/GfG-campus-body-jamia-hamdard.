@@ -20,11 +20,13 @@ export default function FacultyAdmin() {
   });
 
   useEffect(() => {
-    loadData();
+    loadData(true);
   }, []);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (isInitial = false) => {
+    if (isInitial && coordinators.length === 0) {
+      setLoading(true);
+    }
     try {
       const [facRes, memRes] = await Promise.all([
         api.get('/faculty'),
@@ -33,9 +35,10 @@ export default function FacultyAdmin() {
       setCoordinators(facRes.data.data || []);
       setMembers(memRes.data.data || []);
     } catch (err) {
-      console.warn(err);
+      console.warn('[FacultyAdmin] Error loading faculty coordinators:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleOpenAdd = () => {

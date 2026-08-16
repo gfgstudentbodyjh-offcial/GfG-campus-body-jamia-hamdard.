@@ -35,11 +35,13 @@ export default function MantriAdmin() {
   });
 
   useEffect(() => {
-    loadData();
+    loadData(true);
   }, []);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (isInitial = false) => {
+    if (isInitial && mantris.length === 0) {
+      setLoading(true);
+    }
     try {
       const res = await api.get('/mantri');
       const list = res.data.data || [];
@@ -47,8 +49,9 @@ export default function MantriAdmin() {
       cacheService.set('mantri', list);
     } catch (err) {
       console.warn('[MantriAdmin] Error loading mantris:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const [searchConflict, setSearchConflict] = useState(false);

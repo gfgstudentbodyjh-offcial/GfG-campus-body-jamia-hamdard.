@@ -26,11 +26,13 @@ export default function FeedModerationAdmin() {
   const [moderatorReason, setModeratorReason] = useState('');
 
   useEffect(() => {
-    loadModerationData();
+    loadModerationData(true);
   }, []);
 
-  const loadModerationData = async () => {
-    setLoading(true);
+  const loadModerationData = async (isInitial = false) => {
+    if (isInitial && reviewQueue.length === 0 && allReports.length === 0) {
+      setLoading(true);
+    }
     try {
       const [queueRes, postsRes] = await Promise.all([
         api.get('/reports/admin'),

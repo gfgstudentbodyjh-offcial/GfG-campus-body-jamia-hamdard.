@@ -45,21 +45,25 @@ export default function ResourcesAdmin() {
   });
 
   useEffect(() => {
-    loadResources();
-  }, [categoryFilter]);
+    loadResources(true);
+  }, []);
 
-  const loadResources = async () => {
-    setLoading(true);
+  const loadResources = async (isInitial = false) => {
+    if (isInitial && resources.length === 0) {
+      setLoading(true);
+    }
     try {
-      const res = await api.get('/resources', { params: { category: categoryFilter } });
+      const res = await api.get('/resources');
       setResources(res.data.data || []);
     } catch (err) {
-      console.warn(err);
+      console.warn('[ResourcesAdmin] Error loading resources:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const filteredResources = resources.filter(r => {
+    if (categoryFilter !== 'All' && r.category !== categoryFilter) return false;
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (

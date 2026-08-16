@@ -124,11 +124,13 @@ export default function AdministratorsAdmin() {
   ];
 
   useEffect(() => {
-    loadData();
+    loadData(true);
   }, []);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (isInitial = false) => {
+    if (isInitial && admins.length === 0) {
+      setLoading(true);
+    }
     try {
       const [adminsRes, membersRes, logsRes] = await Promise.all([
         api.get('/admin/administrators').catch(() => ({ data: { data: [] } })),
@@ -141,8 +143,9 @@ export default function AdministratorsAdmin() {
       setAuditLogs(logsRes.data.data || []);
     } catch (err) {
       console.warn('Failed loading administrators data:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const togglePermission = (permId) => {
