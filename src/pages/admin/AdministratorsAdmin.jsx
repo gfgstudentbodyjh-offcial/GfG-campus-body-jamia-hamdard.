@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useAdminTheme } from '../../context/AdminThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import ViewToggle from '../../components/admin/ViewToggle';
 import { 
   ShieldCheck, 
   UserPlus, 
@@ -33,6 +34,22 @@ export default function AdministratorsAdmin() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('admins'); // 'admins' | 'logs'
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Grid / List View Toggle State
+  const [adminViewMode, setAdminViewMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('admin_view_administrators');
+      if (saved === 'grid' || saved === 'list') return saved;
+    } catch (e) {}
+    return 'grid';
+  });
+
+  const handleAdminViewChange = (mode) => {
+    setAdminViewMode(mode);
+    try {
+      localStorage.setItem('admin_view_administrators', mode);
+    } catch (e) {}
+  };
 
   // Grant Admin Modal
   const [isGrantModalOpen, setIsGrantModalOpen] = useState(false);
@@ -331,18 +348,23 @@ export default function AdministratorsAdmin() {
         </button>
       </div>
 
-      {/* TAB 1: ADMINISTRATORS TABLE */}
+      {/* TAB 1: ADMINISTRATORS TABLE / CARD GRID */}
       {activeTab === 'admins' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
             <input
               type="text"
               placeholder="Search by name, email, role..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className={`rounded-xl px-4 py-2 text-xs border focus:outline-none focus:border-[#2f9e44] w-72 ${
-                isLight ? 'bg-white border-gray-300 text-slate-900 placeholder-gray-400' : 'bg-[#121721] border-[#30363d] text-white placeholder-gray-500'
+              className={`rounded-xl px-4 py-2.5 text-xs border focus:outline-none focus:border-[#2f9e44] w-full sm:w-80 ${
+                isLight ? 'bg-white border-gray-300 text-slate-900 placeholder-gray-400 shadow-xs' : 'bg-[#121721] border-[#30363d] text-white placeholder-gray-500'
               }`}
+            />
+
+            <ViewToggle
+              viewMode={adminViewMode}
+              onChange={handleAdminViewChange}
             />
           </div>
 
@@ -350,6 +372,120 @@ export default function AdministratorsAdmin() {
             <div className={`text-center py-12 font-mono text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>Loading administrators data...</div>
           ) : filteredAdmins.length === 0 ? (
             <div className={`text-center py-12 font-mono text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>No administrators found.</div>
+          ) : adminViewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredAdmins.map((adm) => {
+                const isRoot = adm.adminRole === 'ROOT_SUPER_ADMIN';
+
+                return (
+                  <div
+                    key={adm._id}
+                    className={`p-5 rounded-2xl border flex flex-col justify-between space-y-4 transition-all duration-200 hover:shadow-md ${
+                      isLight
+                        ? 'bg-white border-gray-200 hover:border-[#2f9e44]/60 shadow-xs'
+                        : 'bg-[#121721] border-[#30363d] hover:border-[#2f9e44]/50'
+                    }`}
+                  >
+                    {/* Header */}
+                    <div className="flex items-start gap-3.5">
+                      <img
+                        src={adm.userRef?.avatar || 'https://ui-avatars.com/api/?name=Admin'}
+                        alt=""
+                        className="w-12 h-12 rounded-full object-cover border-2 border-[#2f9e44] flex-shrink-0 shadow-xs"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className={`text-sm font-extrabold truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                            {adm.userRef?.username || 'User'}
+                          </h4>
+                          {isRoot && (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40">
+                              ROOT
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-xs font-mono truncate mt-0.5 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                          {adm.userRef?.email}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Roles and Status Badges */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold border ${
+                        isRoot 
+                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40' 
+                          : adm.adminRole === 'SUPER_ADMIN'
+                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/40'
+                          : 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/40'
+                      }`}>
+                        {adm.adminRole}
+                      </span>
+
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${
+                        isLight ? 'bg-gray-100 text-slate-700 border-gray-200' : 'bg-[#18202c] text-gray-300 border-[#30363d]'
+                      }`}>
+                        {adm.userRef?.memberRef?.role || adm.userRef?.role || 'Member'}
+                      </span>
+                    </div>
+
+                    {/* Status & Last Login */}
+                    <div className="flex items-center justify-between text-xs pt-1">
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-semibold ${
+                        adm.status === 'Active' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          adm.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
+                        }`} />
+                        {adm.status}
+                      </span>
+
+                      <span className={`text-[10px] font-mono ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                        Login: {adm.lastLoginAt ? new Date(adm.lastLoginAt).toLocaleDateString() : 'Never'}
+                      </span>
+                    </div>
+
+                    {/* Action Bar Footer */}
+                    <div className="pt-3 border-t border-gray-200 dark:border-[#30363d]/80 flex items-center justify-between gap-1.5">
+                      <button
+                        onClick={() => handleResetPin(adm)}
+                        className={`flex-1 py-1.5 px-2 rounded-xl border transition-all inline-flex items-center justify-center gap-1 text-xs font-bold ${
+                          isLight ? 'bg-white hover:bg-gray-100 text-slate-800 border-gray-300' : 'bg-[#18202c] hover:bg-[#30363d] text-gray-300 border-[#30363d]'
+                        }`}
+                        title="Reset 6-digit Admin PIN"
+                      >
+                        <KeyRound className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Reset PIN</span>
+                      </button>
+
+                      {!isRoot && (
+                        <button
+                          onClick={() => handleToggleSuspend(adm)}
+                          className={`py-1.5 px-2.5 rounded-xl text-xs font-bold border transition-all inline-flex items-center justify-center gap-1 ${
+                            adm.status === 'Active'
+                              ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 border-rose-500/30'
+                              : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 border-emerald-500/30'
+                          }`}
+                        >
+                          <UserX className="w-3.5 h-3.5" />
+                          <span>{adm.status === 'Active' ? 'Suspend' : 'Unsuspend'}</span>
+                        </button>
+                      )}
+
+                      {!isRoot && (
+                        <button
+                          onClick={() => handleRevoke(adm)}
+                          className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 transition-all inline-flex items-center"
+                          title="Revoke Access"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
             <div className={`overflow-x-auto rounded-2xl border ${
               isLight ? 'bg-white border-gray-200 shadow-sm' : 'bg-[#121721] border-[#30363d]'

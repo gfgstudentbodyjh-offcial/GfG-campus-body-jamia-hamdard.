@@ -4,6 +4,7 @@ import api from '../../services/api';
 import cacheService from '../../services/cacheService';
 import { OFFICIAL_ROLE_GROUPS } from '../../config/officialRoles';
 import RoleBadge from '../../components/common/RoleBadge';
+import ViewToggle from '../../components/admin/ViewToggle';
 import { formatEventDate } from '../../utils/dateUtils';
 import {
   Users, UserCheck, Sparkles, Search, Filter, ChevronLeft, ChevronRight,
@@ -27,6 +28,22 @@ export default function UserDirectoryAdmin() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 1 });
+
+  // Grid / List View Toggle State
+  const [userViewMode, setUserViewMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('admin_view_user_directory');
+      if (saved === 'grid' || saved === 'list') return saved;
+    } catch (e) {}
+    return 'grid';
+  });
+
+  const handleUserViewChange = (mode) => {
+    setUserViewMode(mode);
+    try {
+      localStorage.setItem('admin_view_user_directory', mode);
+    } catch (e) {}
+  };
 
   // Filters & Search State
   const [searchTerm, setSearchTerm] = useState('');
@@ -275,8 +292,8 @@ export default function UserDirectoryAdmin() {
           />
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        {/* Filters & ViewToggle */}
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
           {/* Role Filter */}
           <select
             value={roleFilter}
@@ -310,11 +327,17 @@ export default function UserDirectoryAdmin() {
             <option value="Inactive">Inactive</option>
             <option value="Suspended">Suspended</option>
           </select>
+
+          {/* View Toggle */}
+          <ViewToggle
+            viewMode={userViewMode}
+            onChange={handleUserViewChange}
+          />
         </div>
 
       </div>
 
-      {/* Users Table Container (Desktop & Cards Mobile) */}
+      {/* Users Container (Grid or Table) */}
       <div className={`rounded-2xl border overflow-hidden transition-colors ${
         isLight ? 'bg-white border-gray-200 shadow-sm' : 'bg-[#121721] border-[#30363d]'
       }`}>
@@ -328,146 +351,177 @@ export default function UserDirectoryAdmin() {
             <p className="text-sm font-bold">No registered users found</p>
             <p className="text-xs">Try adjusting your search keywords or active filters.</p>
           </div>
-        ) : (
-          <>
-            {/* Desktop Table View (>= 768px) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className={`border-b text-[10px] font-mono uppercase ${
-                    isLight ? 'border-gray-200 text-slate-600 bg-gray-50' : 'border-[#30363d] text-gray-400 bg-[#0d1117]/60'
+        ) : userViewMode === 'grid' ? (
+          <div className="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+            {users.map((u) => (
+              <div
+                key={u._id}
+                className={`p-5 rounded-2xl border flex flex-col justify-between space-y-4 transition-all duration-200 hover:shadow-md ${
+                  isLight
+                    ? 'bg-white border-gray-200 hover:border-[#2f9e44]/60 shadow-xs'
+                    : 'bg-[#0d1117] border-[#30363d] hover:border-[#2f9e44]/50'
+                }`}
+              >
+                {/* Profile Header */}
+                <div className="flex items-start gap-3.5">
+                  <img
+                    src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=2f9e44&color=fff`}
+                    alt={u.name}
+                    className="w-14 h-14 rounded-full object-cover border-2 border-[#2f9e44] flex-shrink-0 shadow-xs"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h4 className={`text-sm font-extrabold truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                      {u.name}
+                    </h4>
+                    <p className={`text-xs font-mono truncate mt-0.5 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                      @{u.username}
+                    </p>
+                    {u.userCode && (
+                      <span className="inline-block px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono text-[10px] font-bold mt-1">
+                        {u.userCode}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Contact & Meta */}
+                <div className={`p-2.5 rounded-xl border text-xs font-mono space-y-1 ${
+                  isLight ? 'bg-gray-50 text-slate-700 border-gray-200' : 'bg-[#161b22] text-gray-300 border-[#30363d]/80'
+                }`}>
+                  <p className="truncate">✉️ {u.email}</p>
+                  {u.phone && <p className="truncate">📞 {u.phone}</p>}
+                </div>
+
+                {/* Role Badge & Status */}
+                <div className="flex items-center justify-between gap-2 flex-wrap pt-1">
+                  <RoleBadge role={u.communityRole} size="sm" />
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-semibold ${
+                    u.status === 'Active' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                   }`}>
-                    <th className="py-3.5 px-4 font-bold">User</th>
-                    <th className="py-3.5 px-4 font-bold">Email</th>
-                    <th className="py-3.5 px-4 font-bold">Phone</th>
-                    <th className="py-3.5 px-4 font-bold">Community Role</th>
-                    <th className="py-3.5 px-4 font-bold">Department/Branch</th>
-                    <th className="py-3.5 px-4 font-bold">Joined</th>
-                    <th className="py-3.5 px-4 font-bold">Status</th>
-                    <th className="py-3.5 px-4 font-bold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${isLight ? 'divide-gray-200' : 'divide-[#30363d]/60'}`}>
-                  {users.map((u) => (
-                    <tr key={u._id} className={isLight ? 'hover:bg-slate-50 transition-colors' : 'hover:bg-[#18202c]/50 transition-colors'}>
-                      {/* User Column */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=2f9e44&color=fff`}
-                            alt=""
-                            className={`w-8 h-8 rounded-full object-cover border ${isLight ? 'border-gray-300' : 'border-[#30363d]'}`}
-                          />
-                          <div>
-                            <p className={`font-bold leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{u.name}</p>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`text-[11px] font-mono ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>@{u.username}</span>
-                              {u.userCode && (
-                                <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 font-mono text-[9px] font-bold">
-                                  {u.userCode}
-                                </span>
-                              )}
-                              {!u.profileComplete && (
-                                <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                  Profile Incomplete
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      u.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
+                    }`} />
+                    {u.status}
+                  </span>
+                </div>
 
-                      {/* Email */}
-                      <td className={`py-3 px-4 font-mono text-[11px] ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                        {u.email}
-                      </td>
-
-                      {/* Phone */}
-                      <td className={`py-3 px-4 font-mono text-[11px] ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
-                        {u.phone || '—'}
-                      </td>
-
-                      {/* Role Badge */}
-                      <td className="py-3 px-4">
-                        <RoleBadge role={u.communityRole} size="sm" />
-                      </td>
-
-                      {/* Department */}
-                      <td className={`py-3 px-4 text-[11px] ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                        {u.department}
-                      </td>
-
-                      {/* Joined Date */}
-                      <td className={`py-3 px-4 font-mono text-[11px] ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                        {formatEventDate(u.joinedAt)}
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-semibold ${
-                          u.status === 'Active' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            u.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
-                          }`} />
-                          {u.status}
-                        </span>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => handleViewDetails(u._id)}
-                          className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1 ml-auto transition-colors ${
-                            isLight
-                              ? 'bg-white border-gray-300 text-slate-800 hover:bg-gray-100'
-                              : 'bg-[#18202c] border-[#30363d] text-gray-200 hover:text-white'
-                          }`}
-                        >
-                          <Eye className="w-3.5 h-3.5 text-[#2f9e44]" /> View Details
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Compact Cards View (< 768px) */}
-            <div className="md:hidden divide-y divide-gray-200 dark:divide-[#30363d]">
-              {users.map((u) => (
-                <div key={u._id} className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=2f9e44&color=fff`}
-                        alt=""
-                        className="w-10 h-10 rounded-full object-cover border border-[#2f9e44]"
-                      />
-                      <div>
-                        <h4 className={`font-bold text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>{u.name}</h4>
-                        <p className="text-xs text-gray-500 font-mono">@{u.username}</p>
-                      </div>
-                    </div>
-                    <RoleBadge role={u.communityRole} size="sm" />
-                  </div>
-
-                  <div className={`text-xs space-y-1 font-mono ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
-                    <p>✉️ {u.email}</p>
-                    {u.phone && <p>📞 {u.phone}</p>}
-                    <p>📅 Joined: {formatEventDate(u.joinedAt)}</p>
-                  </div>
-
+                {/* Action Footer */}
+                <div className="pt-3 border-t border-gray-200 dark:border-[#30363d]/80 flex items-center justify-between gap-2">
+                  <span className={`text-[10px] font-mono ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                    Joined: {formatEventDate(u.joinedAt)}
+                  </span>
                   <button
                     onClick={() => handleViewDetails(u._id)}
-                    className="w-full py-2 rounded-xl bg-[#2f9e44]/15 hover:bg-[#2f9e44] text-[#2f9e44] hover:text-white font-bold text-xs border border-[#2f9e44]/30 transition-all flex items-center justify-center gap-2"
+                    className="py-1.5 px-3 rounded-xl bg-[#2f9e44]/15 hover:bg-[#2f9e44] text-[#2f9e44] hover:text-white font-bold text-xs border border-[#2f9e44]/30 transition-all flex items-center gap-1.5"
                   >
-                    <Eye className="w-4 h-4" /> View Details →
+                    <Eye className="w-3.5 h-3.5" /> Details
                   </button>
                 </div>
-              ))}
-            </div>
-          </>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className={`border-b text-[10px] font-mono uppercase ${
+                  isLight ? 'border-gray-200 text-slate-600 bg-gray-50' : 'border-[#30363d] text-gray-400 bg-[#0d1117]/60'
+                }`}>
+                  <th className="py-3.5 px-4 font-bold">User</th>
+                  <th className="py-3.5 px-4 font-bold">Email</th>
+                  <th className="py-3.5 px-4 font-bold">Phone</th>
+                  <th className="py-3.5 px-4 font-bold">Community Role</th>
+                  <th className="py-3.5 px-4 font-bold">Department/Branch</th>
+                  <th className="py-3.5 px-4 font-bold">Joined</th>
+                  <th className="py-3.5 px-4 font-bold">Status</th>
+                  <th className="py-3.5 px-4 font-bold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className={`divide-y ${isLight ? 'divide-gray-200' : 'divide-[#30363d]/60'}`}>
+                {users.map((u) => (
+                  <tr key={u._id} className={isLight ? 'hover:bg-slate-50 transition-colors' : 'hover:bg-[#18202c]/50 transition-colors'}>
+                    {/* User Column */}
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=2f9e44&color=fff`}
+                          alt=""
+                          className={`w-8 h-8 rounded-full object-cover border ${isLight ? 'border-gray-300' : 'border-[#30363d]'}`}
+                        />
+                        <div>
+                          <p className={`font-bold leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{u.name}</p>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`text-[11px] font-mono ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>@{u.username}</span>
+                            {u.userCode && (
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 font-mono text-[9px] font-bold">
+                                {u.userCode}
+                              </span>
+                            )}
+                            {!u.profileComplete && (
+                              <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                Profile Incomplete
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Email */}
+                    <td className={`py-3 px-4 font-mono text-[11px] ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                      {u.email}
+                    </td>
+
+                    {/* Phone */}
+                    <td className={`py-3 px-4 font-mono text-[11px] ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
+                      {u.phone || '—'}
+                    </td>
+
+                    {/* Role Badge */}
+                    <td className="py-3 px-4">
+                      <RoleBadge role={u.communityRole} size="sm" />
+                    </td>
+
+                    {/* Department */}
+                    <td className={`py-3 px-4 text-[11px] ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                      {u.department}
+                    </td>
+
+                    {/* Joined Date */}
+                    <td className={`py-3 px-4 font-mono text-[11px] ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                      {formatEventDate(u.joinedAt)}
+                    </td>
+
+                    {/* Status */}
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-semibold ${
+                        u.status === 'Active' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          u.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
+                        }`} />
+                        {u.status}
+                      </span>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        onClick={() => handleViewDetails(u._id)}
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1 ml-auto transition-colors ${
+                          isLight
+                            ? 'bg-white border-gray-300 text-slate-800 hover:bg-gray-100'
+                            : 'bg-[#18202c] border-[#30363d] text-gray-200 hover:text-white'
+                        }`}
+                      >
+                        <Eye className="w-3.5 h-3.5 text-[#2f9e44]" /> View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

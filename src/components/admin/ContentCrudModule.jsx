@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Search, Filter } from 'lucide-react';
 import { useAdminTheme } from '../../context/AdminThemeContext';
+import ViewToggle from './ViewToggle';
 
 export default function ContentCrudModule({
   title,
@@ -16,11 +17,37 @@ export default function ContentCrudModule({
   renderRow,
   renderCard,
   gridCols = 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4',
-  columns = []
+  columns = [],
+  storageKey,
+  defaultView,
+  allowViewToggle = true
 }) {
   const { isLight } = useAdminTheme();
 
   const hasActionsCol = columns.some(c => c.toLowerCase() === 'actions');
+  const hasBothViews = Boolean(renderCard && renderRow);
+  const showToggle = allowViewToggle && (hasBothViews || Boolean(renderCard));
+
+  // Resolved localStorage key per section
+  const resolvedKey = storageKey || `admin_view_${(title || 'default').toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem(resolvedKey);
+      if (saved === 'grid' || saved === 'list') return saved;
+    } catch (e) {}
+    if (defaultView) return defaultView;
+    return renderCard ? 'grid' : 'list';
+  });
+
+  const handleToggleView = (mode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem(resolvedKey, mode);
+    } catch (e) {}
+  };
+
+  const isGridView = viewMode === 'grid' && Boolean(renderCard);
 
   return (
     <div className="space-y-6">
@@ -43,7 +70,7 @@ export default function ContentCrudModule({
         </button>
       </div>
 
-      {/* Toolbar: Search & Filter */}
+      {/* Toolbar: Search, Filter & ViewToggle */}
       <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
         
         {/* Search */}
@@ -62,27 +89,37 @@ export default function ContentCrudModule({
           />
         </div>
 
-        {/* Filter Pills */}
-        {filterOptions.length > 0 && (
-          <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1">
-            <Filter className={`w-4 h-4 mr-1 flex-shrink-0 ${isLight ? 'text-gray-400' : 'text-gray-500'}`} />
-            {filterOptions.map(opt => (
-              <button
-                key={opt}
-                onClick={() => onFilterChange && onFilterChange(opt)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  activeFilter === opt
-                    ? 'bg-[#2f9e44] text-white shadow-sm'
-                    : isLight
-                    ? 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 shadow-sm'
-                    : 'bg-[#161b22] text-gray-400 hover:text-white border border-[#30363d]'
-                }`}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Filter Pills & ViewToggle */}
+        <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
+          {filterOptions.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <Filter className={`w-4 h-4 mr-1 flex-shrink-0 ${isLight ? 'text-gray-400' : 'text-gray-500'}`} />
+              {filterOptions.map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => onFilterChange && onFilterChange(opt)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                    activeFilter === opt
+                      ? 'bg-[#2f9e44] text-white shadow-sm'
+                      : isLight
+                      ? 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 shadow-sm'
+                      : 'bg-[#161b22] text-gray-400 hover:text-white border border-[#30363d]'
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Segmented Grid / List View Toggle */}
+          {showToggle && (
+            <ViewToggle
+              viewMode={viewMode}
+              onChange={handleToggleView}
+            />
+          )}
+        </div>
       </div>
 
       {/* Content Container (Card Grid or Table) */}
@@ -101,7 +138,7 @@ export default function ContentCrudModule({
             <p className="text-sm font-bold">No records found</p>
             <p className="text-xs">Click "Create New Record" to add your first item.</p>
           </div>
-        ) : renderCard ? (
+        ) : isGridView ? (
           <div className={`p-5 sm:p-6 grid ${gridCols} gap-4 sm:gap-5`}>
             {items.map((item, idx) => (
               <React.Fragment key={item._id || idx}>
@@ -132,6 +169,14 @@ export default function ContentCrudModule({
                 {items.map((item) => renderRow(item))}
               </tbody>
             </table>
+          </div>
+        ) : renderCard ? (
+          <div className={`p-5 sm:p-6 grid ${gridCols} gap-4 sm:gap-5`}>
+            {items.map((item, idx) => (
+              <React.Fragment key={item._id || idx}>
+                {renderCard(item)}
+              </React.Fragment>
+            ))}
           </div>
         ) : null}
       </div>

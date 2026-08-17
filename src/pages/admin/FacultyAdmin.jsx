@@ -98,6 +98,8 @@ export default function FacultyAdmin() {
         items={coordinators}
         loading={loading}
         onAdd={handleOpenAdd}
+        storageKey="admin_view_faculty"
+        gridCols="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
         columns={['Faculty Coordinator', 'Designation', 'Department', 'Status', 'Actions']}
         renderRow={(f) => (
           <tr key={f._id} className={`transition-colors ${isLight ? 'hover:bg-slate-50 text-slate-700' : 'hover:bg-[#121721] text-gray-300'}`}>
@@ -140,6 +142,66 @@ export default function FacultyAdmin() {
               </button>
             </td>
           </tr>
+        )}
+        renderCard={(f) => (
+          <div
+            key={f._id}
+            className={`p-5 rounded-2xl border flex flex-col justify-between space-y-4 transition-all duration-200 hover:shadow-md ${
+              isLight
+                ? 'bg-white border-gray-200 hover:border-[#2f9e44]/60 shadow-xs'
+                : 'bg-[#121721] border-[#30363d] hover:border-[#2f9e44]/50'
+            }`}
+          >
+            <div className="flex items-start gap-3.5">
+              <img
+                src={f.photo || f.memberRef?.photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80'}
+                alt={f.name || f.memberRef?.name}
+                className="w-14 h-14 rounded-full object-cover border-2 border-[#2f9e44] flex-shrink-0 shadow-xs"
+              />
+              <div className="min-w-0 flex-1">
+                <h4 className={`text-sm font-extrabold truncate ${isLight ? 'text-gray-900' : 'text-white'}`}>
+                  {f.name || f.memberRef?.name || 'Faculty Member'}
+                </h4>
+                <p className="text-xs font-semibold text-[#2f9e44] mt-0.5 truncate">{f.designation}</p>
+                <p className={`text-[11px] font-mono mt-0.5 truncate ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+                  {f.email || f.memberRef?.email}
+                </p>
+              </div>
+            </div>
+
+            <div className={`p-2.5 rounded-xl border text-xs ${
+              isLight ? 'bg-gray-50 text-gray-700 border-gray-200' : 'bg-[#0d1117] text-gray-300 border-[#30363d]/80'
+            }`}>
+              <span className="font-semibold">Department:</span> {f.department || 'Jamia Hamdard'}
+            </div>
+
+            <div className="pt-3 border-t border-gray-200 dark:border-[#30363d]/80 flex items-center justify-between gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#2f9e44]/15 text-[#2f9e44] border border-[#2f9e44]/30">
+                Active Mentor
+              </span>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => handleOpenEdit(f)}
+                  className={`p-2 rounded-xl border transition-colors ${
+                    isLight ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200' : 'bg-[#21262d] text-gray-200 border-[#363b42] hover:bg-[#30363d]'
+                  }`}
+                  title="Edit Faculty"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleDelete(f._id)}
+                  className={`p-2 rounded-xl border transition-colors ${
+                    isLight ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'bg-red-500/10 text-red-400 border-red-500/25 hover:bg-red-500/20'
+                  }`}
+                  title="Delete Faculty"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       />
 

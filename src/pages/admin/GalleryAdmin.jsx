@@ -315,6 +315,8 @@ export default function GalleryAdmin() {
         onFilterChange={setAlbumFilter}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
+        storageKey="admin_view_gallery"
+        gridCols="grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4"
         columns={['Media Preview', 'Asset Title', 'Album Category', 'Spotlight Status', 'Actions']}
         renderRow={(g) => (
           <tr key={g._id} className={`transition-colors ${
@@ -324,7 +326,7 @@ export default function GalleryAdmin() {
               <img
                 src={g.url || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=400&q=80'}
                 alt={g.title}
-                className="w-16 h-12 rounded-lg object-cover border flex-shrink-0 shadow-sm"
+                className="w-16 h-12 rounded-lg object-cover border flex-shrink-0 shadow-xs"
               />
             </td>
             <td className={`px-6 py-4 font-bold text-xs sm:text-sm ${isLight ? 'text-gray-900' : 'text-white'}`}>{g.title}</td>
@@ -357,6 +359,66 @@ export default function GalleryAdmin() {
               </button>
             </td>
           </tr>
+        )}
+        renderCard={(g) => (
+          <div
+            key={g._id}
+            className={`rounded-2xl border overflow-hidden flex flex-col justify-between transition-all duration-200 hover:shadow-md ${
+              isLight
+                ? 'bg-white border-gray-200 hover:border-[#2f9e44]/60 shadow-xs'
+                : 'bg-[#121721] border-[#30363d] hover:border-[#2f9e44]/50'
+            }`}
+          >
+            {/* Image Preview */}
+            <div className="relative aspect-video w-full bg-[#0d1117] overflow-hidden group">
+              <img
+                src={g.url || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=400&q=80'}
+                alt={g.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              
+              {/* Spotlight Badge */}
+              {g.isFeatured && (
+                <div className="absolute top-2.5 left-2.5">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#2f9e44] text-white shadow-xs inline-flex items-center gap-1">
+                    <Star className="w-3 h-3 fill-current" /> Featured
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Content Details & Actions */}
+            <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+              <div>
+                <h4 className={`text-sm font-extrabold line-clamp-1 ${isLight ? 'text-gray-900' : 'text-white'}`}>
+                  {g.title}
+                </h4>
+                <p className="text-xs text-[#2f9e44] font-semibold mt-0.5">{g.album}</p>
+              </div>
+
+              <div className="pt-2.5 border-t border-gray-200 dark:border-[#30363d]/80 flex items-center justify-end gap-1.5">
+                <button
+                  onClick={() => handleOpenEdit(g)}
+                  className={`p-2 rounded-xl border transition-colors ${
+                    isLight ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200' : 'bg-[#21262d] text-gray-200 border-[#363b42] hover:bg-[#30363d]'
+                  }`}
+                  title="Edit Photo"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleDelete(g._id)}
+                  className={`p-2 rounded-xl border transition-colors ${
+                    isLight ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'bg-red-500/10 text-red-400 border-red-500/25 hover:bg-red-500/20'
+                  }`}
+                  title="Delete Photo"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       />
 

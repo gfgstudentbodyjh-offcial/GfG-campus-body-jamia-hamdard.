@@ -242,6 +242,87 @@ export default function MembersAdmin() {
         searchTerm={search}
         onSearchChange={setSearch}
         gridCols="grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4"
+        storageKey="admin_view_member_directory"
+        columns={['Member Profile', 'Email', 'Account Type', 'Official Role', 'Membership Status', 'Joined Date', 'Actions']}
+        renderRow={(m) => (
+          <tr key={m._id} className={`transition-colors ${
+            isLight ? 'hover:bg-slate-50/80 border-b border-gray-200' : 'hover:bg-[#0d1117]/60 border-b border-[#30363d]'
+          }`}>
+            <td className="px-6 py-4">
+              <div className="flex items-center gap-3">
+                <img
+                  src={m.photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80'}
+                  alt={m.name}
+                  className="w-10 h-10 rounded-full object-cover border border-[#2f9e44] flex-shrink-0"
+                />
+                <div>
+                  <p className={`font-bold text-xs sm:text-sm ${isLight ? 'text-gray-900' : 'text-white'}`}>{m.name}</p>
+                  {m.membershipId && (
+                    <p className="text-[10px] text-[#2f9e44] font-mono font-bold">{m.membershipId}</p>
+                  )}
+                </div>
+              </div>
+            </td>
+            <td className={`px-6 py-4 text-xs ${isLight ? 'text-gray-700' : 'text-gray-300'}`}>{m.email}</td>
+            <td className="px-6 py-4">
+              <span className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                m.accountType === 'Member'
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30'
+                  : 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30'
+              }`}>
+                {m.accountType || 'Visitor'}
+              </span>
+            </td>
+            <td className={`px-6 py-4 text-xs font-bold ${isLight ? 'text-gray-900' : 'text-white'}`}>{m.role || 'Visitor'}</td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <span className={`inline-block whitespace-nowrap px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase border ${
+                m.membershipStatus === 'active' || m.status === 'Active'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-[#2f9e44]/20 dark:text-[#2f9e44] dark:border-[#2f9e44]/30'
+                  : m.membershipStatus === 'suspended'
+                  ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30'
+                  : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-gray-800 dark:text-gray-400'
+              }`}>
+                {m.membershipStatus || m.status || 'pending'}
+              </span>
+            </td>
+            <td className={`px-6 py-4 text-xs font-mono ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+              {formatEventDate(m.createdAt || m.issueDate)}
+            </td>
+            <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+              <button
+                onClick={() => handleOpenEdit(m)}
+                className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
+                  isLight
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                    : 'bg-[#2f9e44]/20 text-[#2f9e44] border-[#2f9e44]/30 hover:bg-[#2f9e44] hover:text-white'
+                }`}
+                title="Promote / Manage Membership & Role"
+              >
+                Change Membership
+              </button>
+              <button
+                onClick={() => setInspectMember(m)}
+                className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-colors inline-flex items-center gap-1 ${
+                  isLight
+                    ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                    : 'bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500 hover:text-white'
+                }`}
+                title="Inspect Registered Signup Information"
+              >
+                <Eye className="w-3 h-3" /> Inspect
+              </button>
+              <button
+                onClick={() => handleDelete(m._id)}
+                className={`p-1.5 rounded-lg border transition-colors ${
+                  isLight ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'bg-[#21262d] text-red-400 border-[#30363d] hover:bg-red-500/20'
+                }`}
+                title="Delete Member"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </td>
+          </tr>
+        )}
         renderCard={(m) => {
           const isVerifiedMember = m.accountType === 'Member';
           const isActive = m.membershipStatus === 'active' || m.status === 'Active';

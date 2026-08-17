@@ -240,6 +240,96 @@ export default function EventsAdmin() {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         gridCols="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+        storageKey="admin_view_events"
+        columns={['Thumbnail & Event Title', 'Schedule Date', 'Venue', 'Status', 'Actions']}
+        renderRow={(ev) => (
+          <tr key={ev._id} className={`transition-colors ${
+            isLight ? 'hover:bg-slate-50/80 border-b border-gray-200' : 'hover:bg-[#0d1117]/60 border-b border-[#30363d]'
+          }`}>
+            <td className="px-6 py-4">
+              <div className="flex items-center gap-3">
+                <img
+                  src={ev.banner || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=600&q=80'}
+                  alt={ev.title}
+                  className="w-16 h-10 rounded-lg object-cover border flex-shrink-0 shadow-xs"
+                />
+                <div>
+                  <p className={`font-bold text-xs sm:text-sm ${isLight ? 'text-gray-900' : 'text-white'}`}>{ev.title}</p>
+                  <p className={`text-[10px] max-w-xs truncate ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>{ev.description}</p>
+                </div>
+              </div>
+            </td>
+            <td className={`px-6 py-4 text-xs font-mono font-medium ${isLight ? 'text-gray-700' : 'text-gray-300'}`}>
+              {formatEventDate(ev.date)}
+            </td>
+            <td className={`px-6 py-4 text-xs ${isLight ? 'text-gray-600' : 'text-gray-400'}`}>{ev.venue || 'Jamia Hamdard'}</td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <span className={`inline-block whitespace-nowrap px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase border ${renderStatusBadge(ev.status)}`}>
+                {ev.status || 'Upcoming'}
+              </span>
+            </td>
+            <td className="px-6 py-4 text-center min-w-[150px]">
+              <div className="flex flex-col items-center justify-center gap-2">
+                {ev.status !== 'Completed' && (
+                  <button
+                    onClick={() => handleMarkCompleted(ev._id)}
+                    className={`w-[125px] h-[32px] px-2.5 rounded-full text-[11px] font-bold border flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 shadow-xs ${
+                      isLight
+                        ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+                        : 'bg-[#2f9e44]/15 hover:bg-[#2f9e44]/30 text-emerald-400 border-[#2f9e44]/40'
+                    }`}
+                    title="Mark Event Completed"
+                    aria-label="Mark Event Completed"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <span>Mark Completed</span>
+                  </button>
+                )}
+                <div className="flex items-center justify-center gap-2">
+                  {ev.registrationLink && (
+                    <a
+                      href={ev.registrationLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 ${
+                        isLight
+                          ? 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300'
+                          : 'bg-[#21262d] text-gray-300 border-[#30363d] hover:text-white'
+                      }`}
+                      title="Open Registration Link"
+                    >
+                      <LinkIcon className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                  <button
+                    onClick={() => handleOpenEdit(ev)}
+                    className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 ${
+                      isLight
+                        ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300/80 shadow-xs'
+                        : 'bg-[#21262d] hover:bg-[#30363d] text-gray-200 border-[#363b42]'
+                    }`}
+                    title="Edit event"
+                    aria-label="Edit event"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(ev._id)}
+                    className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 ${
+                      isLight
+                        ? 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200/80 shadow-xs'
+                        : 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/25'
+                    }`}
+                    title="Delete event"
+                    aria-label="Delete event"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        )}
         renderCard={(ev) => {
           const isCompleted = ev.status === 'Completed';
 
