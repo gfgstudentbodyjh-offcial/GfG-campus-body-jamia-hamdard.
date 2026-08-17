@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Calendar, Bell, MessageSquare, Sliders, ImageIcon,
-  BookOpen, Award, Shield, Layers, Users, UserCheck, ShieldCheck, ChevronRight, Sun, Moon, Sparkles
+  BookOpen, Award, Shield, Layers, Users, UserCheck, ShieldCheck, ChevronRight, Sun, Moon, Sparkles, Rocket
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -26,14 +26,14 @@ export default function AdminSidebar({ isLight, toggleTheme }) {
     {
       group: 'Leadership & Teams',
       items: [
-        { name: 'Campus Mantri', path: '/admin/mantri', icon: Shield, isV1: true },
-        { name: 'Teams & Leads', path: '/admin/teams', icon: Layers, isV1: true }
+        { name: 'Teams & Leads', path: '/admin/teams', icon: Layers, isV1: true },
+        { name: 'Campus Mantri', path: '/admin/mantri', icon: Award, isV1: true }
       ]
     },
     {
-      group: 'Content',
+      group: 'Content & Media',
       items: [
-        { name: 'Events', path: '/admin/events', icon: Calendar, isV1: true },
+        { name: 'Events Manager', path: '/admin/events', icon: Calendar, isV1: true },
         { name: 'Latest Announcements', path: '/admin/announcements', icon: Bell, isV1: true },
         { name: 'Gallery Manager', path: '/admin/gallery', icon: ImageIcon, isV1: true },
         { name: 'Resources Manager', path: '/admin/resources', icon: BookOpen, isV1: true }
@@ -49,6 +49,7 @@ export default function AdminSidebar({ isLight, toggleTheme }) {
     {
       group: 'System Settings',
       items: [
+        { name: 'Launch Countdown', path: '/admin/launch-settings', icon: Rocket, isV1: true },
         { name: 'Faculty Coordinators', path: '/admin/faculty', icon: Award, disabled: true },
         { name: 'Homepage Copy', path: '/admin/hero-settings', icon: Sliders, disabled: true }
       ]

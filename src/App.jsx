@@ -37,8 +37,10 @@ const AnalyticsSettingsAdmin = lazy(() => import('./pages/admin/AnalyticsSetting
 const FeedModerationAdmin = lazy(() => import('./pages/admin/FeedModerationAdmin'));
 const AdministratorsAdmin = lazy(() => import('./pages/admin/AdministratorsAdmin'));
 const UserDirectoryAdmin = lazy(() => import('./pages/admin/UserDirectoryAdmin'));
+const LaunchSettingsAdmin = lazy(() => import('./pages/admin/LaunchSettingsAdmin'));
 
 import ScrollToTop from './components/common/ScrollToTop';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 const AdminLoadingFallback = () => (
   <div className="min-h-screen bg-[#0a0d12] text-gray-200 flex flex-col items-center justify-center font-mono">
@@ -51,7 +53,8 @@ export default function App() {
   return (
     <AuthProvider>
       <ScrollToTop />
-      <Routes>
+      <ErrorBoundary>
+        <Routes>
         {/* Public & Member Space Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/teams" element={<TeamsPage />} />
@@ -107,11 +110,13 @@ export default function App() {
           <Route path="analytics-settings" element={<Suspense fallback={<AdminLoadingFallback />}><AnalyticsSettingsAdmin /></Suspense>} />
           <Route path="feed-moderation" element={<Suspense fallback={<AdminLoadingFallback />}><FeedModerationAdmin /></Suspense>} />
           <Route path="administrators" element={<Suspense fallback={<AdminLoadingFallback />}><AdministratorsAdmin /></Suspense>} />
+          <Route path="launch-settings" element={<Suspense fallback={<AdminLoadingFallback />}><LaunchSettingsAdmin /></Suspense>} />
         </Route>
 
         {/* Fallback Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </ErrorBoundary>
     </AuthProvider>
   );
 }

@@ -5,6 +5,8 @@ import api from '../../services/api';
 import { useAdminTheme } from '../../context/AdminThemeContext';
 import { formatEventDate } from '../../utils/dateUtils';
 import { OFFICIAL_ROLE_GROUPS, getTeamNameFromRole } from '../../config/officialRoles';
+import RoleBadge from '../../components/common/RoleBadge';
+import { isCurrentCampusMantri } from '../../utils/mantriUtils';
 import {
   Upload, Download, Trash2, Edit3, Image as ImageIcon, Plus, X,
   UserCheck, ShieldCheck, UserX, Clock, Award, Users, Eye, Building,
@@ -273,7 +275,9 @@ export default function MembersAdmin() {
                 {m.accountType || 'Visitor'}
               </span>
             </td>
-            <td className={`px-6 py-4 text-xs font-bold ${isLight ? 'text-gray-900' : 'text-white'}`}>{m.role || 'Visitor'}</td>
+            <td className="px-6 py-4">
+              <RoleBadge role={m.role || 'Visitor'} isCurrentMantri={isCurrentCampusMantri(m)} size="sm" />
+            </td>
             <td className="px-6 py-4 whitespace-nowrap">
               <span className={`inline-block whitespace-nowrap px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase border ${
                 m.membershipStatus === 'active' || m.status === 'Active'
@@ -381,11 +385,7 @@ export default function MembersAdmin() {
                   {m.accountType || 'Visitor'}
                 </span>
 
-                <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold truncate max-w-[150px] border ${
-                  isLight ? 'bg-slate-100 text-slate-800 border-slate-200' : 'bg-[#21262d] text-gray-200 border-[#30363d]'
-                }`}>
-                  {m.role || 'Visitor'}
-                </span>
+                <RoleBadge role={m.role || 'Visitor'} isCurrentMantri={isCurrentCampusMantri(m)} size="sm" />
               </div>
 
               {/* Status Badge & Joined Date */}

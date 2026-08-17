@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Github, Linkedin, Instagram, Globe, ArrowRight } from 'lucide-react';
+import RoleBadge from './RoleBadge';
+import { isCurrentCampusMantri } from '../../utils/mantriUtils';
 
 /**
  * GFG Campus Body — Public Member Discovery Card
@@ -31,16 +33,8 @@ export default function MemberCard({ member }) {
   const profileSlug = member.username || member._id;
   const profileUrl = `/profile/${profileSlug}`;
 
-  // Role accent theme based on official hierarchy
-  const isLeadership = /mantri|president|community lead/i.test(displayRole);
-  const isLead = /\blead\b|head/i.test(displayRole) && !/co-lead|deputy|vice/i.test(displayRole);
-  const isCoLead = /co-lead|deputy|vice/i.test(displayRole);
-
-  const roleBadgeClass = isLeadership || isLead
-    ? 'bg-[#d6b65c]/15 text-[#d6b65c] border-[#d6b65c]/40'
-    : isCoLead
-    ? 'bg-slate-400/15 text-slate-300 border-slate-500/40'
-    : 'bg-[#2f9e44]/15 text-[#2f9e44] border-[#2f9e44]/40';
+  // Dynamic Current Campus Mantri resolver
+  const isCurrentMantri = isCurrentCampusMantri(member);
 
   const avatarSrc = !imageError && member.photo
     ? member.photo
@@ -50,7 +44,9 @@ export default function MemberCard({ member }) {
     <div className="w-72 sm:w-80 flex-shrink-0 snap-start p-5 rounded-2xl bg-gradient-to-b from-[#121721] to-[#0a0d12] border border-[#30363d] hover:border-[#2f9e44]/60 transition-all duration-300 shadow-lg flex flex-col justify-between space-y-4 group relative overflow-hidden">
       
       {/* Top Ambient Glow */}
-      <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#2f9e44]/5 rounded-full blur-2xl pointer-events-none group-hover:bg-[#2f9e44]/10 transition-colors" />
+      <div className={`absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl pointer-events-none transition-colors ${
+        isCurrentMantri ? 'bg-[#D4A72C]/10 group-hover:bg-[#D4A72C]/20' : 'bg-[#2f9e44]/5 group-hover:bg-[#2f9e44]/10'
+      }`} />
 
       {/* Header Info: Photo + Name + Role */}
       <div className="space-y-3 relative z-10">
@@ -62,14 +58,18 @@ export default function MemberCard({ member }) {
               loading="lazy"
               decoding="async"
               onError={() => setImageError(true)}
-              className="w-14 h-14 rounded-xl object-cover border border-[#30363d] group-hover:border-[#2f9e44] transition-all shadow-md"
+              className={`w-14 h-14 rounded-xl object-cover border transition-all shadow-md ${
+                isCurrentMantri
+                  ? 'border-[#D4A72C] shadow-[0_0_10px_rgba(212,167,44,0.3)]'
+                  : 'border-[#30363d] group-hover:border-[#2f9e44]'
+              }`}
             />
           </Link>
 
           <div className="min-w-0 flex-1">
-            <span className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border inline-block mb-1 truncate max-w-full ${roleBadgeClass}`}>
-              {displayRole}
-            </span>
+            <div className="mb-1">
+              <RoleBadge role={displayRole} isCurrentMantri={isCurrentMantri} size="sm" />
+            </div>
             <Link to={profileUrl} className="block">
               <h4 className="text-sm sm:text-base font-bold text-white group-hover:text-[#2f9e44] transition-colors truncate">
                 {displayName}

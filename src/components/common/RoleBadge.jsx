@@ -1,23 +1,45 @@
 import React from 'react';
 import { ShieldCheck, Award, Sparkles, UserCheck } from 'lucide-react';
+import CampusMantriBadge from './CampusMantriBadge';
 
-export default function RoleBadge({ role = 'Member', size = 'normal', className = '' }) {
+/**
+ * Universal RoleBadge Component
+ * Automatically styles Current Campus Mantri as Gold and Former Campus Mantri as Green
+ */
+export default function RoleBadge({
+  role = 'Member',
+  size = 'normal',
+  isCurrentMantri = false,
+  className = ''
+}) {
   const normalized = (role || 'Member').trim();
+
+  // If this is a Campus Mantri role, delegate to the dedicated CampusMantriBadge
+  if (normalized.toLowerCase().includes('mantri')) {
+    const isCurrent = isCurrentMantri ||
+      normalized.toLowerCase().includes('current') ||
+      (!normalized.toLowerCase().includes('former') && isCurrentMantri);
+
+    return (
+      <CampusMantriBadge
+        isCurrent={isCurrent}
+        size={size}
+        className={className}
+      />
+    );
+  }
 
   let colorClasses = 'bg-[#18202c] text-gray-300 border-[#30363d]';
   let Icon = UserCheck;
 
-  if (normalized.includes('Campus Mantri')) {
-    colorClasses = 'bg-[#2f9e44]/15 text-[#2f9e44] border-[#2f9e44]/40 shadow-sm';
-    Icon = ShieldCheck;
-  } else if (normalized.includes('Faculty') || normalized.includes('Coordinator')) {
+  if (normalized.includes('Faculty') || normalized.includes('Coordinator')) {
     colorClasses = 'bg-amber-500/15 text-amber-400 border-amber-500/40';
     Icon = Award;
   } else if (normalized.includes('Co-Lead')) {
-    colorClasses = 'bg-teal-500/15 text-teal-400 border-teal-500/40 shadow-sm';
+    colorClasses = 'bg-teal-500/15 text-teal-400 border-teal-500/40 shadow-xs';
     Icon = ShieldCheck;
   } else if (normalized.includes('Lead') || normalized.includes('Core')) {
-    colorClasses = 'bg-sky-500/15 text-sky-400 border-sky-500/40 shadow-sm';
+    colorClasses = 'bg-sky-500/15 text-sky-400 border-sky-500/40 shadow-xs';
     Icon = ShieldCheck;
   } else if (normalized.includes('Ambassador')) {
     colorClasses = 'bg-purple-500/15 text-purple-300 border-purple-500/40';

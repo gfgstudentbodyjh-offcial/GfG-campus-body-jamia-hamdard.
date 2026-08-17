@@ -9,6 +9,7 @@ import {
 
 import api from '../../services/api';
 import cacheService from '../../services/cacheService';
+import LaunchCountdown from '../../components/common/LaunchCountdown';
 
 // Shared Single Source of Truth Data Modules
 import { MOCK_FACULTY } from '../../data/faculty';
@@ -23,6 +24,7 @@ import InfiniteMarquee from '../../components/common/InfiniteMarquee';
 import Hero3DVisual from '../../components/common/Hero3DVisual';
 import GalleryLightbox from '../../components/common/GalleryLightbox';
 import TechCard from '../../components/common/TechCard';
+import CampusMantriBadge from '../../components/common/CampusMantriBadge';
 
 // Team Icon Mapper
 const getTeamIcon = (iconName) => {
@@ -38,6 +40,10 @@ const getTeamIcon = (iconName) => {
 };
 
 export default function Home() {
+  // Launch Countdown State
+  const [launchConfig, setLaunchConfig] = useState({ enabled: false, duration: 7, replayMode: 'first_visit' });
+  const [showLaunch, setShowLaunch] = useState(false);
+
   const [liveMantris, setLiveMantris] = useState(() => {
     const cached = cacheService.get('mantri');
     return cached?.data || [];
@@ -128,6 +134,33 @@ export default function Home() {
       })
       .catch(err => console.warn('[Home] Background announcements sync error:', err));
 
+    // Check Launch Countdown (Only for visitors when enabled by Admin)
+    try {
+      cacheService.dedupe('launch_settings', () => api.get('/settings/launch'))
+        .then(res => {
+          const data = res.data?.data;
+          if (data && data.enabled === true) {
+            const isSessionMode = data.replayMode === 'session';
+            const alreadySeen = isSessionMode
+              ? sessionStorage.getItem('gfg_launch_seen')
+              : localStorage.getItem('gfg_launch_seen');
+
+            if (alreadySeen !== 'true') {
+              setLaunchConfig({
+                enabled: true,
+                duration: [5, 7, 10].includes(data.duration) ? data.duration : 7,
+                replayMode: isSessionMode ? 'session' : 'first_visit'
+              });
+              setShowLaunch(true);
+            }
+          }
+        })
+        .catch(err => {
+          // Fail silently, load website normally
+          console.warn('[Home] Launch setting query skipped:', err.message);
+        });
+    } catch (e) {}
+
     return () => {
       unsubMantri();
       unsubTeams();
@@ -139,23 +172,31 @@ export default function Home() {
 
   const normalizePerson = (p, fallbackTitle = 'Member') => {
     if (!p) return null;
-    const bioText = p.bio || p.about || p.message || 'GeeksforGeeks Campus Body Member';
+    const bioText = p.bio || p.about || p.message || p.memberRef?.bio || p.memberRef?.about || 'GeeksforGeeks Campus Body Member';
+    const linkedinVal = p.linkedin || p.socialLinks?.linkedin || p.socials?.linkedin || p.memberRef?.linkedin || p.memberRef?.socialLinks?.linkedin;
+    const githubVal = p.github || p.socialLinks?.github || p.socials?.github || p.memberRef?.github || p.memberRef?.socialLinks?.github;
+    const instagramVal = p.instagram || p.socialLinks?.instagram || p.socials?.instagram || p.memberRef?.instagram || p.memberRef?.socialLinks?.instagram;
+    const emailVal = p.email || p.userRef?.email || p.memberRef?.email;
+
     return {
-      _id: p._id,
-      name: p.name || p.fullName,
-      username: p.username || p.userRef?.username,
-      photo: p.photo || p.userRef?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
-      title: p.title || p.role || fallbackTitle,
-      role: p.role || p.title || fallbackTitle,
+      _id: p._id || p.id || String(Math.random()),
+      name: p.name || p.fullName || p.memberRef?.name || 'Member',
+      username: p.username || p.userRef?.username || p.memberRef?.username || (p.name || 'user').toLowerCase().replace(/\s+/g, ''),
+      photo: p.photo || p.userRef?.avatar || p.memberRef?.photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+      title: p.title || p.role || p.memberRef?.role || fallbackTitle,
+      role: p.role || p.title || p.memberRef?.role || fallbackTitle,
       message: bioText,
       bio: bioText,
       about: bioText,
       imagePosition: p.imagePosition || 'center 50%',
-      socials: p.socials || {
-        email: p.email || p.userRef?.email,
-        linkedin: p.linkedin,
-        github: p.github,
-        instagram: p.instagram
+      linkedin: linkedinVal,
+      github: githubVal,
+      instagram: instagramVal,
+      socials: {
+        email: emailVal,
+        linkedin: linkedinVal,
+        github: githubVal,
+        instagram: instagramVal
       }
     };
   };
@@ -196,7 +237,7 @@ export default function Home() {
       };
     });
 
-  // Helper to map team domain names to specific Lead and Co-Lead titles
+  // Domain Lead Role Label Resolver
   const getDomainRoleTitles = (teamName = '') => {
     if (/design|creative/i.test(teamName)) return { leadRole: 'Design Lead', coLeadRole: 'Design Co-Lead' };
     if (/tech/i.test(teamName)) return { leadRole: 'Technical Lead', coLeadRole: 'Technical Co-Lead' };
@@ -207,7 +248,7 @@ export default function Home() {
     return { leadRole: `${teamName} Lead`, coLeadRole: `${teamName} Co-Lead` };
   };
 
-  // Assemble Infinite Leadership Showcase List (Individual Leader Cards — Campus Mantri is kept separate & static)
+  // Assemble Infinite Leadership Showcase List
   const DOMAIN_LEADERSHIP_ORDER = [
     { key: 'community' },
     { key: 'design' },
@@ -238,9 +279,8 @@ export default function Home() {
           teamName: team.name,
           icon: team.icon,
           bio: lead.bio || lead.about || team.description || 'Dedicated to empowering the campus community with technical skills and opportunities.',
-          socials: lead.socials,
-          profileUrl: lead.username ? `/profile/${lead.username}` : '/teams',
-          isLead: true
+          linkedin: lead.linkedin,
+          github: lead.github
         });
       }
 
@@ -255,72 +295,29 @@ export default function Home() {
           roleTitle: coLeadRole,
           teamName: team.name,
           icon: team.icon,
-          bio: coLead.bio || coLead.about || team.description || 'Supporting domain initiatives and empowering fellow student developers.',
-          socials: coLead.socials,
-          profileUrl: coLead.username ? `/profile/${coLead.username}` : '/teams',
-          isLead: false
+          bio: coLead.bio || coLead.about || team.description || 'Dedicated to empowering the campus community with technical skills and opportunities.',
+          linkedin: coLead.linkedin,
+          github: coLead.github
         });
       }
     }
   });
 
-  // Catch any additional custom domain teams configured in Admin
-  effectiveTeams.forEach((team) => {
-    const isAlreadyIncluded = leadershipShowcaseList.some(l => l.teamName?.toLowerCase() === team.name?.toLowerCase());
-    if (!isAlreadyIncluded) {
-      const lead = normalizePerson(team.lead || team.leadRef, 'Lead');
-      const coLead = normalizePerson(team.coLead || team.coLeadRef, 'Co-Lead');
-      const { leadRole, coLeadRole } = getDomainRoleTitles(team.name);
+  // Mantri Selection
+  const activeMantri = liveMantris.find(m => m.isCurrent) || liveMantris[0] || MOCK_MANTRI_LIST[0];
 
-      if (lead && lead.name) {
-        leadershipShowcaseList.push({
-          _id: `${team._id}-lead`,
-          personId: lead._id,
-          name: lead.name,
-          username: lead.username,
-          photo: lead.photo,
-          imagePosition: lead.imagePosition || 'center 50%',
-          roleTitle: leadRole,
-          teamName: team.name,
-          icon: team.icon,
-          bio: lead.bio || lead.about || team.description || 'Dedicated to empowering the campus community with technical skills and opportunities.',
-          socials: lead.socials,
-          profileUrl: lead.username ? `/profile/${lead.username}` : '/teams',
-          isLead: true
-        });
-      }
-
-      if (coLead && coLead.name) {
-        leadershipShowcaseList.push({
-          _id: `${team._id}-colead`,
-          personId: coLead._id,
-          name: coLead.name,
-          username: coLead.username,
-          photo: coLead.photo,
-          imagePosition: coLead.imagePosition || 'center 50%',
-          roleTitle: coLeadRole,
-          teamName: team.name,
-          icon: team.icon,
-          bio: coLead.bio || coLead.about || team.description || 'Supporting domain initiatives and empowering fellow student developers.',
-          socials: coLead.socials,
-          profileUrl: coLead.username ? `/profile/${coLead.username}` : '/teams',
-          isLead: false
-        });
-      }
-    }
-  });
-
-  // Determine live faculty list
-  const effectiveFaculty = liveFaculty.length > 0 ? liveFaculty : MOCK_FACULTY;
-  const facultyList = effectiveFaculty.map(f => ({
+  // Faculty Coordinators
+  const facultyList = (liveFaculty.length > 0 ? liveFaculty : MOCK_FACULTY).map(f => ({
     _id: f._id,
-    name: f.name || f.memberRef?.name,
+    name: f.name || f.memberRef?.name || 'Faculty Member',
     designation: f.designation,
     department: f.department || f.institution,
+    institution: f.department || f.institution,
     photo: f.photo || f.memberRef?.photo,
     email: f.email || f.memberRef?.email,
     imagePosition: f.imagePosition || 'top'
   }));
+  const facultyCoordinators = facultyList;
 
   const allEvents = liveEvents.length > 0 ? liveEvents : MOCK_EVENTS;
   const isPastEvent = (e) => {
@@ -365,6 +362,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-transparent text-gray-100 flex flex-col font-sans overflow-x-hidden">
+      {showLaunch && (
+        <LaunchCountdown
+          duration={launchConfig.duration}
+          replayMode={launchConfig.replayMode}
+          onComplete={() => setShowLaunch(false)}
+        />
+      )}
+
       <Navbar />
 
       <main className="flex-1">
@@ -532,27 +537,30 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ─── 3. CAMPUS MANTRI (STATIC) ──────────────────────────────────── */}
+        {/* ─── 3. CAMPUS MANTRI (CURRENT SPOTLIGHT) ─────────────────────────── */}
         {currentMantri && (
           <section className="py-10 sm:py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
-              <TechCard className="p-6 sm:p-10 lg:p-12 border-[#2f9e44]/50 bg-gradient-to-br from-[#121721] via-[#0a0d12] to-[#142e16] shadow-2xl rounded-2xl">
+              <TechCard className="p-6 sm:p-10 lg:p-12 border-[#D4A72C]/40 bg-gradient-to-br from-[#181611] via-[#0a0d12] to-[#2b2413]/30 shadow-2xl shadow-[#D4A72C]/5 rounded-2xl">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-center">
                   
-                  {/* Photo & Badge */}
+                  {/* Photo & Gold Badge */}
                   <div className="flex flex-col items-center text-center">
                     <img
                       src={currentMantri.photo}
                       alt={`${currentMantri.name}, Campus Mantri`}
                       loading="lazy"
                       style={{ objectPosition: currentMantri.imagePosition || 'center top' }}
-                      className="w-32 h-36 sm:w-40 sm:h-44 rounded-2xl object-cover border-2 border-[#2f9e44] shadow-xl flex-shrink-0"
+                      className="w-32 h-36 sm:w-40 sm:h-44 rounded-2xl object-cover border-2 border-[#D4A72C] shadow-[0_0_15px_rgba(212,167,44,0.25)] flex-shrink-0"
                     />
                     <h3 className="text-xl sm:text-2xl font-extrabold text-white mt-3 sm:mt-4 leading-tight">{currentMantri.name}</h3>
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs font-mono font-bold text-[#2f9e44] uppercase tracking-wider bg-[#2f9e44]/15 border border-[#2f9e44]/30 px-3 py-1 rounded-md flex items-center gap-1">
-                        <ShieldCheck className="w-3.5 h-3.5" /> Campus Mantri • Session {currentMantri.tenure || currentMantri.session}
-                      </span>
+                      <CampusMantriBadge
+                        isCurrent={true}
+                        session={currentMantri.tenure || currentMantri.session}
+                        showSession={true}
+                        size="normal"
+                      />
                     </div>
                   </div>
 
@@ -586,13 +594,36 @@ export default function Home() {
                         </div>
                       )}
 
-                      <Link
-                        to="/campus-mantri"
-                        className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[#2f9e44] hover:text-white transition-colors bg-[#2f9e44]/10 hover:bg-[#2f9e44] px-4 py-2 rounded-xl border border-[#2f9e44]/30"
-                      >
-                        <span>View Campus Mantri History</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
+                      {(() => {
+                        const currentProfileSlug =
+                          currentMantri.username ||
+                          currentMantri.memberRef?.username ||
+                          currentMantri.memberRef?._id ||
+                          currentMantri.memberRef ||
+                          currentMantri._id;
+
+                        return (
+                          <div className="flex flex-wrap items-center justify-center md:justify-end gap-2.5">
+                            {currentProfileSlug && (
+                              <Link
+                                to={`/profile/${currentProfileSlug}`}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all bg-[#D4A72C]/15 hover:bg-[#D4A72C] text-[#E6B83F] hover:text-black border border-[#D4A72C]/50 shadow-sm shadow-[#D4A72C]/10 group"
+                              >
+                                <span>View Profile</span>
+                                <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                              </Link>
+                            )}
+
+                            <Link
+                              to="/campus-mantri"
+                              className="inline-flex items-center gap-2 text-xs font-mono font-bold text-gray-300 hover:text-white transition-colors bg-[#18202c] hover:bg-[#21262d] px-4 py-2 rounded-xl border border-[#30363d]"
+                            >
+                              <span>Campus Mantri History</span>
+                              <ArrowRight className="w-3.5 h-3.5 text-[#2f9e44]" />
+                            </Link>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 

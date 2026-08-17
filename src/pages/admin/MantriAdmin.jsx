@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import cacheService from '../../services/cacheService';
 import { useAdminTheme } from '../../context/AdminThemeContext';
+import CampusMantriBadge from '../../components/common/CampusMantriBadge';
 import {
   ShieldCheck, Edit3, Trash2, Plus, Search, CheckCircle2,
   AlertCircle, X, Sparkles, ExternalLink, Calendar, Award, User
@@ -250,17 +251,16 @@ export default function MantriAdmin() {
       {currentServingMantri && (
         <div className={`p-6 sm:p-8 rounded-2xl border transition-colors shadow-md space-y-4 ${
           isLight
-            ? 'bg-gradient-to-br from-emerald-50/70 via-white to-green-50/40 border-emerald-300/80 text-slate-900'
-            : 'bg-gradient-to-br from-[#121721] via-[#0a0d12] to-[#142e16]/40 border-[#2f9e44]/50 text-white'
+            ? 'bg-gradient-to-br from-amber-50/70 via-white to-amber-50/40 border-[#D4A72C]/40 text-slate-900 shadow-[#D4A72C]/10'
+            : 'bg-gradient-to-br from-[#181611] via-[#0a0d12] to-[#2b2413]/40 border-[#D4A72C]/50 text-white shadow-[#D4A72C]/10'
         }`}>
           <div className="flex items-center justify-between">
-            <span className={`text-xs font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-md flex items-center gap-1.5 ${
-              isLight
-                ? 'text-[#2f9e44] bg-[#2f9e44]/10 border border-[#2f9e44]/30'
-                : 'text-[#2f9e44] bg-[#2f9e44]/15 border border-[#2f9e44]/30'
-            }`}>
-              <ShieldCheck className="w-4 h-4 text-[#2f9e44]" /> Currently Serving Campus Mantri
-            </span>
+            <CampusMantriBadge
+              isCurrent={true}
+              session={currentServingMantri.session || currentServingMantri.tenure}
+              showSession={true}
+              size="normal"
+            />
             <span className={`text-xs font-mono font-semibold ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
               Session {currentServingMantri.session || currentServingMantri.tenure}
             </span>
@@ -270,7 +270,7 @@ export default function MantriAdmin() {
             <img
               src={currentServingMantri.memberRef?.photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80'}
               alt={currentServingMantri.memberRef?.name}
-              className="w-24 h-28 sm:w-28 sm:h-32 rounded-xl object-cover border-2 border-[#2f9e44] shadow-md flex-shrink-0"
+              className="w-24 h-28 sm:w-28 sm:h-32 rounded-xl object-cover border-2 border-[#D4A72C] shadow-[0_0_12px_rgba(212,167,44,0.3)] flex-shrink-0"
             />
             <div className="space-y-2 text-center sm:text-left flex-1 min-w-0">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
@@ -278,7 +278,7 @@ export default function MantriAdmin() {
                   {currentServingMantri.memberRef?.name || 'Campus Mantri'}
                 </h3>
                 {currentServingMantri.memberRef?.membershipId && (
-                  <span className="text-xs font-mono font-bold text-[#2f9e44] bg-[#2f9e44]/10 border border-[#2f9e44]/30 px-2 py-0.5 rounded">
+                  <span className="text-xs font-mono font-bold text-[#E6B83F] bg-[#D4A72C]/15 border border-[#D4A72C]/40 px-2 py-0.5 rounded">
                     {currentServingMantri.memberRef.membershipId}
                   </span>
                 )}
@@ -398,19 +398,10 @@ export default function MantriAdmin() {
                         {m.session || m.tenure || '—'}
                       </td>
                       <td className="px-6 py-4">
-                        {isCur ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#2f9e44] text-white shadow-sm">
-                            <ShieldCheck className="w-3 h-3" /> Current Session
-                          </span>
-                        ) : (
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold border ${
-                            isLight
-                              ? 'bg-slate-100 text-slate-600 border-slate-200'
-                              : 'bg-gray-800 text-gray-400 border-gray-700'
-                          }`}>
-                            Former Session
-                          </span>
-                        )}
+                        <CampusMantriBadge
+                          isCurrent={isCur}
+                          size="sm"
+                        />
                       </td>
                       <td className="px-6 py-4 text-right space-x-2">
                         {!isCur && (

@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import RoleBadge from './RoleBadge';
 import { resolveAvatarUrl, formatDisplayHandle } from '../../utils/mediaResolver';
+import { isCurrentCampusMantri } from '../../utils/mantriUtils';
 
 const slugifyName = (name) => {
   if (!name) return '';
@@ -35,6 +36,7 @@ export default function AuthorIdentity({
   };
 
   const isSmall = size === 'small' || size === 'sm';
+  const isCurrentMantri = isCurrentCampusMantri(data);
 
   return (
     <div className={`flex items-start gap-2 sm:gap-2.5 min-w-0 ${className}`}>
@@ -54,7 +56,9 @@ export default function AuthorIdentity({
             isSmall
               ? 'w-7 h-7 sm:w-8 sm:h-8 min-w-[28px] min-h-[28px]'
               : 'w-10 h-10 min-w-[40px] min-h-[40px]'
-          } aspect-square rounded-full object-cover border border-[#2f9e44] shadow-sm group-hover/avatar:border-white transition-colors`}
+          } aspect-square rounded-full object-cover border shadow-sm group-hover/avatar:border-white transition-colors ${
+            isCurrentMantri ? 'border-[#D4A72C] shadow-[0_0_8px_rgba(212,167,44,0.25)]' : 'border-[#2f9e44]'
+          }`}
           onError={(e) => {
             e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2f9e44&color=fff&bold=true`;
           }}
@@ -75,7 +79,7 @@ export default function AuthorIdentity({
           </button>
           {showRole && role && (
             <span onClick={(e) => e.stopPropagation()} className="cursor-default flex-shrink-0">
-              <RoleBadge role={role} size={isSmall ? 'sm' : 'normal'} />
+              <RoleBadge role={role} isCurrentMantri={isCurrentMantri} size={isSmall ? 'sm' : 'normal'} />
             </span>
           )}
         </div>

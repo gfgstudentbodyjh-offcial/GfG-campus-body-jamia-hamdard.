@@ -3,6 +3,7 @@ import { ShieldCheck, QrCode, AlertCircle, Download, ExternalLink, Sparkles, Che
 import RoleBadge from './RoleBadge';
 import TechCard from './TechCard';
 import { resolveMembershipCardTheme, MEMBERSHIP_THEMES } from '../../utils/membershipTheme';
+import { isCurrentCampusMantri } from '../../utils/mantriUtils';
 
 export default function MembershipCard({ member, isOwner = true }) {
   const [downloading, setDownloading] = useState(false);
@@ -296,7 +297,7 @@ export default function MembershipCard({ member, isOwner = true }) {
 
           <div className="space-y-2 min-w-0 flex-1">
             <h2 className="text-xl sm:text-2xl font-black text-[#F7F5ED] truncate">{member.name}</h2>
-            <RoleBadge role={member.role} />
+            <RoleBadge role={member.role} isCurrentMantri={isCurrentCampusMantri(member)} />
             <p className="text-xs font-mono text-[#B8C0BD]">{member.teamName || 'Technical Chapter'} Team</p>
           </div>
         </div>

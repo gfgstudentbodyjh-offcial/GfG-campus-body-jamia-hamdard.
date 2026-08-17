@@ -15,6 +15,7 @@ import { resolveAvatarUrl, isValidMediaUrl, getValidMediaUrl, formatDisplayHandl
 import { resolveProfileTheme } from '../../utils/membershipTheme';
 import cacheService from '../../services/cacheService';
 import { getCachedProfile, setCachedProfile, patchCachedPost } from '../../utils/communityCache';
+import { isCurrentCampusMantri } from '../../utils/mantriUtils';
 
 import {
   User, Edit3, Github, Linkedin, Globe, Instagram, Plus, X,
@@ -556,7 +557,7 @@ export default function ProfilePage() {
 
                       {/* Official Role Badge + User ID Pill */}
                       <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-0.5">
-                        <RoleBadge role={profile.role || 'Visitor'} />
+                        <RoleBadge role={profile.role || 'Visitor'} isCurrentMantri={isCurrentCampusMantri(profile)} />
 
                         {profile.userCode && (
                           <span className="px-2.5 py-1 rounded-lg bg-[#18202c] border border-[#30363d] font-mono text-[11px] font-bold text-gray-300 shadow-sm">

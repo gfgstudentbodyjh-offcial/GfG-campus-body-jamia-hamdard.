@@ -6,6 +6,7 @@ import { OFFICIAL_ROLE_GROUPS } from '../../config/officialRoles';
 import RoleBadge from '../../components/common/RoleBadge';
 import ViewToggle from '../../components/admin/ViewToggle';
 import { formatEventDate } from '../../utils/dateUtils';
+import { isCurrentCampusMantri } from '../../utils/mantriUtils';
 import {
   Users, UserCheck, Sparkles, Search, Filter, ChevronLeft, ChevronRight,
   Eye, Download, RefreshCw, X, ShieldAlert, ShieldCheck, Mail, Phone,
@@ -394,7 +395,7 @@ export default function UserDirectoryAdmin() {
 
                 {/* Role Badge & Status */}
                 <div className="flex items-center justify-between gap-2 flex-wrap pt-1">
-                  <RoleBadge role={u.communityRole} size="sm" />
+                  <RoleBadge role={u.communityRole} isCurrentMantri={isCurrentCampusMantri(u)} size="sm" />
                   <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-semibold ${
                     u.status === 'Active' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                   }`}>
@@ -479,7 +480,7 @@ export default function UserDirectoryAdmin() {
 
                     {/* Role Badge */}
                     <td className="py-3 px-4">
-                      <RoleBadge role={u.communityRole} size="sm" />
+                      <RoleBadge role={u.communityRole} isCurrentMantri={isCurrentCampusMantri(u)} size="sm" />
                     </td>
 
                     {/* Department */}
@@ -597,7 +598,7 @@ export default function UserDirectoryAdmin() {
                         {selectedUserDetail.name}
                       </h4>
                       <p className="text-xs font-mono text-gray-400">@{selectedUserDetail.username}</p>
-                      <RoleBadge role={selectedUserDetail.communityRole} />
+                      <RoleBadge role={selectedUserDetail.communityRole} isCurrentMantri={isCurrentCampusMantri(selectedUserDetail)} />
                     </div>
                   </div>
                 </div>
