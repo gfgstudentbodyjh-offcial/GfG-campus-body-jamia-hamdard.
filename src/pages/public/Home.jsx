@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowRight, ArrowUpRight, Sparkles, ChevronRight, Mail, Linkedin, Instagram, Github,
   ShieldCheck, Users, Palette, Calendar, Megaphone, Share2, Terminal,
-  Image as ImageIcon, Trophy, Code2, Bell, Pin, CheckCircle2
+  Image as ImageIcon, Trophy, Code2, Bell, Pin, CheckCircle2, ExternalLink
 } from 'lucide-react';
 
 import api from '../../services/api';
