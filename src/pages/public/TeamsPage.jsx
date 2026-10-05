@@ -5,7 +5,7 @@ import api from '../../services/api';
 import { MOCK_TEAMS } from '../../data/teams';
 import { MOCK_FACULTY } from '../../data/faculty';
 import {
-  Users, Code2, Palette, Calendar, Megaphone, Share2, Mail, Linkedin,
+  Users, Code2, Palette, Calendar, Megaphone, Share2, Camera, PenTool, Database, Mail, Linkedin,
   Github, Instagram, Award, GraduationCap, ArrowUpRight, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import TechHeader from '../../components/common/TechHeader';
@@ -19,7 +19,10 @@ const ICON_MAP = {
   Palette,
   Calendar,
   Megaphone,
-  Share2
+  Share2,
+  Camera,
+  PenTool,
+  Database
 };
 
 function TeamMembersSection({ members, teamName, onOpenDetails }) {

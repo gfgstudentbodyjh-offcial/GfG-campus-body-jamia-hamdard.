@@ -56,6 +56,30 @@ export const OFFICIAL_ROLE_GROUPS = [
     ]
   },
   {
+    group: 'MEDIA TEAM',
+    roles: [
+      'Media Lead',
+      'Media Co-Lead',
+      'Media Member'
+    ]
+  },
+  {
+    group: 'EDITORIAL TEAM',
+    roles: [
+      'Editorial Lead',
+      'Editorial Co-Lead',
+      'Editorial Member'
+    ]
+  },
+  {
+    group: 'DATA & FORM TEAM',
+    roles: [
+      'Data & Form Lead',
+      'Data & Form Co-Lead',
+      'Data & Form Member'
+    ]
+  },
+  {
     group: 'COMMUNITY',
     roles: [
       'Community Lead'
@@ -83,6 +107,9 @@ export const getTeamNameFromRole = (role) => {
   if (r.startsWith('PR')) return 'PR';
   if (r.startsWith('Design')) return 'Design';
   if (r.startsWith('Social Media')) return 'Social Media';
+  if (r.startsWith('Media')) return 'Media Team';
+  if (r.startsWith('Editorial')) return 'Editorial Team';
+  if (r.startsWith('Data & Form')) return 'Data & Form Team';
   if (r.startsWith('Community')) return 'Community';
   if (r === 'Campus Mantri') return 'Leadership';
   if (r === 'Faculty Coordinator') return 'Faculty';

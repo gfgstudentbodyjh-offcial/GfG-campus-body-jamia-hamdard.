@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowRight, ArrowUpRight, Sparkles, ChevronRight, Mail, Linkedin, Instagram, Github,
-  ShieldCheck, Users, Palette, Calendar, Megaphone, Share2, Terminal,
+  ShieldCheck, Users, Palette, Calendar, Megaphone, Share2, Camera, PenTool, Database, Terminal,
   Image as ImageIcon, Trophy, Code2, Bell, Pin, CheckCircle2, ExternalLink
 } from 'lucide-react';
 
@@ -34,6 +34,9 @@ const getTeamIcon = (iconName) => {
     case 'Calendar': return Calendar;
     case 'Megaphone': return Megaphone;
     case 'Share2': return Share2;
+    case 'Camera': return Camera;
+    case 'PenTool': return PenTool;
+    case 'Database': return Database;
     case 'Terminal': return Terminal;
     default: return Users;
   }
@@ -239,6 +242,9 @@ export default function Home() {
 
   // Domain Lead Role Label Resolver
   const getDomainRoleTitles = (teamName = '') => {
+    if (/media team/i.test(teamName)) return { leadRole: 'Media Lead', coLeadRole: 'Media Co-Lead' };
+    if (/editorial/i.test(teamName)) return { leadRole: 'Editorial Lead', coLeadRole: 'Editorial Co-Lead' };
+    if (/data\s*&\s*form/i.test(teamName)) return { leadRole: 'Data & Form Lead', coLeadRole: 'Data & Form Co-Lead' };
     if (/design|creative/i.test(teamName)) return { leadRole: 'Design Lead', coLeadRole: 'Design Co-Lead' };
     if (/tech/i.test(teamName)) return { leadRole: 'Technical Lead', coLeadRole: 'Technical Co-Lead' };
     if (/event|operation/i.test(teamName)) return { leadRole: 'Event Lead', coLeadRole: 'Event Co-Lead' };
@@ -255,7 +261,10 @@ export default function Home() {
     { key: 'event' },
     { key: 'pr' },
     { key: 'social' },
-    { key: 'tech' }
+    { key: 'tech' },
+    { key: 'media team' },
+    { key: 'editorial' },
+    { key: 'data' }
   ];
 
   const leadershipShowcaseList = [];

@@ -1,11 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, Code2, Palette, Calendar, Megaphone, Share2, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Users, Code2, Palette, Calendar, Megaphone, Share2, Camera, PenTool, Database, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import api from '../../services/api';
 import cacheService from '../../services/cacheService';
 import MemberCard from './MemberCard';
 
 // Official Domain Team Configurations in Hierarchical Display Order
 const TEAM_CONFIGS = [
+  {
+    key: 'media',
+    title: 'Media Team',
+    desc: 'Photographers and videographers capturing and producing visual content for chapter events.',
+    icon: Camera,
+    matcher: (t) => /^\s*media(\s+team)?\s*$/i.test(t || '')
+  },
+  {
+    key: 'editorial',
+    title: 'Editorial Team',
+    desc: 'Writers and editors crafting articles, newsletters, and announcements.',
+    icon: PenTool,
+    matcher: (t) => /editorial/i.test(t || '')
+  },
+  {
+    key: 'data-form',
+    title: 'Data & Form Team',
+    desc: 'Specialists building forms, managing event data, and delivering analytics.',
+    icon: Database,
+    matcher: (t) => /data\s*(&|and)?\s*form/i.test(t || '')
+  },
   {
     key: 'technical',
     title: 'Technical Team',

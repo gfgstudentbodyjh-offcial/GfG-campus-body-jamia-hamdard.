@@ -5,6 +5,7 @@ import cacheService from '../../services/cacheService';
 import { useAdminTheme } from '../../context/AdminThemeContext';
 import { Edit3, Trash2, Camera, Star, X, UploadCloud, CheckCircle2, Image as ImageIcon, Crop, Loader2 } from 'lucide-react';
 import ImageCropModal from '../../components/common/ImageCropModal';
+import AlbumCombobox from '../../components/admin/AlbumCombobox';
 
 export default function GalleryAdmin() {
   const { isLight } = useAdminTheme();
@@ -29,15 +30,31 @@ export default function GalleryAdmin() {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [targetAlbum, setTargetAlbum] = useState('Campus Activities');
+  const [targetAlbum, setTargetAlbum] = useState('');
 
-  const albums = ['All', 'Event Gallery', 'Community Gallery', 'Hackathons', 'Workshops', 'Meetups', 'Campus Activities'];
+  // Albums are derived dynamically from existing gallery items (no hardcoded list)
+  const albumNames = Array.from(
+    new Map(
+      items
+        .map(g => (g.album || '').trim())
+        .filter(Boolean)
+        .map(a => [a.toLowerCase(), a])
+    ).values()
+  ).sort((a, b) => a.localeCompare(b));
+  const albums = ['All', ...albumNames];
+
+  // Reuse an existing album's exact spelling (case-insensitive) to avoid duplicates
+  const resolveAlbum = (name) => {
+    const cleaned = (name || '').trim().replace(/\s+/g, ' ');
+    const existing = albumNames.find(a => a.toLowerCase() === cleaned.toLowerCase());
+    return existing || cleaned;
+  };
 
   const [formData, setFormData] = useState({
     _id: '',
     title: '',
     url: '',
-    album: 'Campus Activities',
+    album: '',
     category: 'Hackathon',
     isFeatured: true
   });
@@ -144,7 +161,7 @@ export default function GalleryAdmin() {
       title: '',
       url: '',
       publicId: '',
-      album: 'Campus Activities',
+      album: '',
       category: 'Workshops',
       isFeatured: true
     });
@@ -157,7 +174,7 @@ export default function GalleryAdmin() {
       title: g.title || '',
       url: g.url || '',
       publicId: g.publicId || '',
-      album: g.album || 'Campus Activities',
+      album: g.album || '',
       category: g.category || 'Workshops',
       isFeatured: g.isFeatured || false
     });
@@ -171,7 +188,12 @@ export default function GalleryAdmin() {
       return;
     }
     try {
-      const payload = { ...formData };
+      const album = resolveAlbum(formData.album);
+      if (!album) {
+        alert('Please choose or create an album.');
+        return;
+      }
+      const payload = { ...formData, album };
       if (!payload._id) delete payload._id;
 
       if (formData._id) {
@@ -203,6 +225,11 @@ export default function GalleryAdmin() {
 
   const handleBatchUploadSubmit = async () => {
     if (selectedFiles.length === 0) return;
+    const albumName = resolveAlbum(targetAlbum);
+    if (!albumName) {
+      alert('Please choose an existing album or enter a name to create a new one.');
+      return;
+    }
     setUploadProgress(true);
 
     try {
@@ -228,7 +255,7 @@ export default function GalleryAdmin() {
               title: item.name.replace(/\.[^/.]+$/, ''),
               url: imgUrl,
               publicId,
-              album: targetAlbum,
+              album: albumName,
               category: 'Community',
               isFeatured: true
             });
@@ -441,15 +468,14 @@ export default function GalleryAdmin() {
             <div className="space-y-4 text-xs font-medium">
               <div>
                 <label className={`block font-semibold mb-1 ${isLight ? 'text-gray-700' : 'text-gray-300'}`}>Target Album</label>
-                <select
-                  value={targetAlbum}
-                  onChange={e => setTargetAlbum(e.target.value)}
-                  className={`w-full rounded-xl px-3 py-2 border text-xs font-semibold focus:outline-none focus:border-[#2f9e44] ${
-                    isLight ? 'bg-white border-gray-300 text-gray-900' : 'bg-[#0d1117] border-[#30363d] text-white'
-                  }`}
-                >
-                  {albums.filter(a => a !== 'All').map(a => <option key={a} value={a}>{a}</option>)}
-                </select>
+                <AlbumCombobox value={targetAlbum} onChange={setTargetAlbum} albums={albumNames} />
+                {targetAlbum.trim() && (
+                  <p className={`text-[10px] mt-1 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {albumNames.some(a => a.toLowerCase() === targetAlbum.trim().toLowerCase())
+                      ? 'Photos will be added to this existing album.'
+                      : 'A new album will be created with your first upload.'}
+                  </p>
+                )}
               </div>
 
               {/* Native Dropzone */}
@@ -608,15 +634,7 @@ export default function GalleryAdmin() {
 
               <div>
                 <label className={`block font-semibold mb-1 ${isLight ? 'text-gray-700' : 'text-gray-300'}`}>Album Category</label>
-                <select
-                  value={formData.album}
-                  onChange={e => setFormData({ ...formData, album: e.target.value })}
-                  className={`w-full rounded-xl px-3 py-2 border text-xs font-medium focus:outline-none focus:border-[#2f9e44] ${
-                    isLight ? 'bg-white border-gray-300 text-gray-900' : 'bg-[#0d1117] border-[#30363d] text-white'
-                  }`}
-                >
-                  {albums.filter(a => a !== 'All').map(a => <option key={a} value={a}>{a}</option>)}
-                </select>
+                <AlbumCombobox value={formData.album} onChange={(v) => setFormData({ ...formData, album: v })} albums={albumNames} />
               </div>
 
               <div className="flex items-center gap-2 pt-2">

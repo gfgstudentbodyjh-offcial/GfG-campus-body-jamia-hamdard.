@@ -22,7 +22,15 @@ export default function GalleryPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  const albums = ['All', 'Event Gallery', 'Community Gallery'];
+  // Album tabs are derived from the gallery data so newly created albums appear automatically.
+  // Legacy albums keep their familiar leading position.
+  const PINNED_ALBUMS = ['Event Gallery', 'Community Gallery'];
+  const dynamicAlbums = Array.from(new Set(items.map((i) => (i.album || '').trim()).filter(Boolean)));
+  const albums = [
+    'All',
+    ...PINNED_ALBUMS,
+    ...dynamicAlbums.filter((a) => !PINNED_ALBUMS.includes(a))
+  ];
 
   useEffect(() => {
     const unsub = cacheService.subscribe('gallery', (data) => {

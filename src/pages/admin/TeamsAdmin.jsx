@@ -3,7 +3,7 @@ import api from '../../services/api';
 import cacheService from '../../services/cacheService';
 import { useAdminTheme } from '../../context/AdminThemeContext';
 import {
-  Users, Code2, Palette, Calendar, Megaphone, Share2, Plus,
+  Users, Code2, Palette, Calendar, Megaphone, Share2, Camera, PenTool, Database, Plus,
   Edit3, Trash2, Search, CheckCircle2, AlertCircle, X,
   UserPlus, UserMinus, Shield, ShieldCheck, ChevronRight
 } from 'lucide-react';
@@ -44,6 +44,24 @@ const CHAPTER_TEAM_DOMAINS = [
     icon: 'Code2',
     iconComp: Code2,
     description: 'Architecting web platforms, open-source projects, algorithms, and engineering sessions.'
+  },
+  {
+    name: 'Media Team',
+    icon: 'Camera',
+    iconComp: Camera,
+    description: 'Capturing photos and videos of chapter events and producing visual content.'
+  },
+  {
+    name: 'Editorial Team',
+    icon: 'PenTool',
+    iconComp: PenTool,
+    description: 'Writing articles, newsletters, and announcements with consistent quality.'
+  },
+  {
+    name: 'Data & Form Team',
+    icon: 'Database',
+    iconComp: Database,
+    description: 'Building registration forms, managing event data, and analytics reporting.'
   }
 ];
 
@@ -273,6 +291,9 @@ export default function TeamsAdmin() {
       case 'Calendar': return Calendar;
       case 'Megaphone': return Megaphone;
       case 'Share2': return Share2;
+      case 'Camera': return Camera;
+      case 'PenTool': return PenTool;
+      case 'Database': return Database;
       case 'Users': return Users;
       default: {
         const found = CHAPTER_TEAM_DOMAINS.find(d => d.icon === iconName);

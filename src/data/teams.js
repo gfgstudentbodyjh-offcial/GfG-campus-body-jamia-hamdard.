@@ -145,5 +145,26 @@ export const MOCK_TEAMS = [
         instagram: 'https://www.instagram.com/k.yussra'
       }
     }
+  },
+  {
+    _id: 'team_media',
+    name: 'Media Team',
+    category: 'Media',
+    icon: 'Camera',
+    description: 'Captures photos and videos of chapter events, produces visual content, and documents the campus body journey.'
+  },
+  {
+    _id: 'team_editorial',
+    name: 'Editorial Team',
+    category: 'Editorial',
+    icon: 'PenTool',
+    description: 'Writes articles, newsletters, and announcements, and ensures quality and consistency of all published content.'
+  },
+  {
+    _id: 'team_data_form',
+    name: 'Data & Form Team',
+    category: 'Data',
+    icon: 'Database',
+    description: 'Builds registration forms, manages event data, and handles analytics and reporting for chapter initiatives.'
   }
 ];
