@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, Menu, X, User, BookOpen, Users, Trophy, Image as ImageIcon, LogOut, Shield, Bookmark, CreditCard, Bell, Pin } from 'lucide-react';
+import { ChevronDown, Menu, X, User, BookOpen, Users, Trophy, Image as ImageIcon, LogOut, Shield, Bookmark, CreditCard, Bell, Pin, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import AuthModal from './AuthModal';
 import api from '../../services/api';
@@ -64,6 +64,7 @@ export default function Navbar() {
 
   // Secondary links inside More dropdown
   const moreLinks = [
+    { name: 'Register for Ideathon', path: '/registration', desc: 'THINKTANK Ideathon 2026 entry', icon: Sparkles, badge: 'Live' },
     { name: 'Announcements', path: '#announcements', desc: 'Latest bulletins & updates', icon: Bell, isModalTrigger: true },
     { name: 'Gallery', path: '/gallery', desc: 'Photo & video highlights', icon: ImageIcon },
     { name: 'Resources', path: '/resources', desc: 'Study notes & roadmaps', icon: BookOpen },
@@ -232,7 +233,14 @@ export default function Navbar() {
                           <Icon className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="text-xs font-bold">{item.name}</div>
+                          <div className="text-xs font-bold flex items-center gap-1.5">
+                            {item.name}
+                            {item.badge && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#2f9e44] text-white font-mono font-bold">
+                                {item.badge}
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[10px] text-gray-400 font-normal">{item.desc}</div>
                         </div>
                       </Link>

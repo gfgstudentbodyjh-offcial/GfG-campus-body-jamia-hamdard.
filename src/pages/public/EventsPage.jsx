@@ -3,7 +3,7 @@ import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/common/Footer';
 import api from '../../services/api';
 import { MOCK_EVENTS } from '../../data/events';
-import { Calendar, UserCheck, Handshake, Trophy, ExternalLink } from 'lucide-react';
+import { Calendar, UserCheck, Handshake, Trophy, ExternalLink, Sparkles, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import TechHeader from '../../components/common/TechHeader';
 import TechCard from '../../components/common/TechCard';
@@ -105,6 +105,29 @@ export default function EventsPage() {
             ))}
           </div>
         </TechHeader>
+
+        {/* Dedicated Team Registration Callout Banner */}
+        <div className="glass-panel p-4 sm:p-5 rounded-2xl border border-[#2f9e44]/40 bg-gradient-to-r from-[#121721] via-[#0a0d12] to-[#142e16]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-[#2f9e44]/15 border border-[#2f9e44]/30 flex items-center justify-center text-[#2f9e44] flex-shrink-0 shadow-sm">
+              <Sparkles className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs sm:text-sm font-bold text-white uppercase tracking-tight">THINKTANK IDEATHON 2026</span>
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30 font-bold">5G USE CASE LAB</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2f9e44] text-white font-bold">REGISTRATION OPEN</span>
+              </div>
+              <p className="text-[11px] text-gray-300 mt-0.5">IDEAS × INNOVATION × IMPACT — Explore practical ideas and turn concepts into real-world 5G use cases.</p>
+            </div>
+          </div>
+          <Link
+            to="/registration"
+            className="px-5 py-2.5 rounded-xl gradient-button text-xs font-bold flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition-transform whitespace-nowrap flex-shrink-0"
+          >
+            Register Your Team <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
 
         {/* Events Grid */}
         {loading ? (
@@ -339,6 +362,14 @@ export default function EventsPage() {
                   >
                     <span>Open Registration Form</span>
                     <ExternalLink className="w-4 h-4" />
+                  </Link>
+                ) : (selectedEvent.status === 'Registration Open' || selectedEvent.isUpcoming) ? (
+                  <Link
+                    to="/registration"
+                    className="w-full py-3 rounded-xl gradient-button text-xs font-bold flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    <span>Register Your Team Now</span>
+                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 ) : (
                   <button

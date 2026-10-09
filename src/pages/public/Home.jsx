@@ -420,11 +420,30 @@ export default function Home() {
                 Learn • Build • Collaborate • Grow
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-                <Link to="/events" className="w-full sm:w-auto px-8 py-4 rounded-xl gradient-button font-bold text-base flex items-center justify-center gap-3 shadow-lg shadow-[#2f9e44]/25">
+              <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center lg:justify-start gap-3.5 pt-2">
+                <Link to="/events" className="w-full sm:w-auto px-7 py-3.5 sm:py-4 rounded-xl gradient-button font-bold text-base flex items-center justify-center gap-3 shadow-lg shadow-[#2f9e44]/25 hover:scale-[1.02] active:scale-[0.98] transition-transform">
                   Explore Events <ArrowRight className="w-5 h-5" />
                 </Link>
-                <Link to="/community" className="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#121721] border border-[#30363d] hover:border-[#2f9e44]/60 font-semibold text-base text-gray-200 hover:text-white flex items-center justify-center gap-2 transition-all">
+                <Link
+                  to="/registration"
+                  className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-[#142617] border border-[#2f9e44]/80 hover:border-[#2f9e44] hover:bg-[#1a3821] text-white flex items-center justify-center gap-3 shadow-lg shadow-[#2f9e44]/20 hover:scale-[1.02] active:scale-[0.98] transition-all group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[#22A447]/20 border border-[#22A447]/40 flex items-center justify-center text-[#22A447] flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Sparkles className="w-4 h-4 text-[#22A447] group-hover:rotate-12 transition-transform" />
+                  </div>
+                  <div className="text-left flex flex-col justify-center">
+                    <div className="flex items-center gap-1.5 font-bold text-sm sm:text-base leading-tight">
+                      <span>Register Now</span>
+                      <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-[#22A447] text-white">
+                        Live
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-[#A2ADA6] font-medium leading-tight mt-0.5 group-hover:text-white transition-colors">
+                      THINKTANK Ideathon 2026
+                    </span>
+                  </div>
+                </Link>
+                <Link to="/community" className="w-full sm:w-auto px-7 py-3.5 sm:py-4 rounded-xl bg-[#121721] border border-[#30363d] hover:border-[#2f9e44]/60 font-semibold text-base text-gray-200 hover:text-white flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all">
                   Join Community
                 </Link>
               </div>

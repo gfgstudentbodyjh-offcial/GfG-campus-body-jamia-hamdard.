@@ -16,6 +16,7 @@ import LeaderboardPage from './pages/public/LeaderboardPage';
 import ProfilePage from './pages/public/ProfilePage';
 import MemberVerificationPage from './pages/public/MemberVerificationPage';
 import MembersPage from './pages/public/MembersPage';
+import RegistrationPage from './pages/public/RegistrationPage';
 
 // Admin Pages & Protected Layout (Lazy Loaded to minimize public bundle size)
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -72,6 +73,7 @@ export default function App() {
         <Route path="/profile/:username" element={<ProfilePage />} />
         <Route path="/members/:memberId" element={<ProfilePage />} />
         <Route path="/verify/member/:verificationId" element={<MemberVerificationPage />} />
+        <Route path="/registration" element={<RegistrationPage />} />
 
         {/* Super Admin Login */}
         <Route
