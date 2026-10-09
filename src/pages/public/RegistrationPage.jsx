@@ -540,7 +540,7 @@ export default function RegistrationPage() {
   const additionalMembersCount = totalMembersNum ? Math.max(0, totalMembersNum - 1) : 0;
 
   return (
-    <div className="min-h-screen bg-[#0B100E] text-[#F5F7F5] flex flex-col relative selection:bg-[#22A447]/30 selection:text-white">
+    <div className="min-h-screen bg-[#0B100E] text-[#F5F7F5] flex flex-col relative selection:bg-[#22A447]/30 selection:text-white w-full max-w-full overflow-x-clip">
       {/* Universal Website Navbar */}
       <Navbar />
 
@@ -559,10 +559,12 @@ export default function RegistrationPage() {
         onExploreDetails={handleModalExploreDetails}
       />
 
-      {/* Subtle Ambient Lighting */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[320px] bg-gradient-to-b from-[#22A447]/5 via-transparent to-transparent pointer-events-none blur-3xl"></div>
+      {/* Subtle Ambient Lighting - strictly clipped to screen width to prevent mobile scaling issues */}
+      <div className="absolute top-0 left-0 right-0 h-[360px] overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] max-w-[100vw] h-[320px] bg-gradient-to-b from-[#22A447]/5 via-transparent to-transparent blur-3xl"></div>
+      </div>
 
-      <main className="flex-1 relative z-10 max-w-4xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">
+      <main className="flex-1 relative z-10 max-w-4xl mx-auto w-full px-3.5 sm:px-6 py-6 sm:py-12 min-w-0">
         {confirmedRegistration ? (
           /* Success Pass & Confirmation Screen */
           <RegistrationSuccessModal
@@ -570,11 +572,11 @@ export default function RegistrationPage() {
             onReset={handleResetForm}
           />
         ) : (
-          <div className="space-y-6 sm:space-y-8">
+          <div className="space-y-5 sm:space-y-8 w-full min-w-0">
             {/* ─── 1. EVENT INTRODUCTION HEADER ───────────────────────── */}
-            <header id="event-overview-header" className="rounded-2xl bg-[#121916] border border-[#28342D] p-6 sm:p-8 space-y-6 shadow-xl scroll-mt-24">
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                <div className="space-y-3">
+            <header id="event-overview-header" className="rounded-2xl bg-[#121916] border border-[#28342D] p-4 sm:p-8 space-y-5 sm:space-y-6 shadow-xl scroll-mt-24 w-full min-w-0">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-5 sm:gap-6">
+                <div className="space-y-3 min-w-0 flex-1">
                   {/* Institutional & Lab Eyebrow */}
                   <div className="flex flex-wrap items-center gap-2 text-xs text-[#A2ADA6]">
                     <span className="font-semibold text-[#22A447]">GeeksforGeeks Campus Body</span>
@@ -603,16 +605,16 @@ export default function RegistrationPage() {
                 </div>
 
                 {/* Official Logos Lockup */}
-                <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-3.5 rounded-2xl bg-[#171F1B] border border-[#28342D] self-start flex-shrink-0 shadow-md">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-white p-2 sm:p-2.5 flex items-center justify-center shadow-sm">
+                <div className="flex items-center gap-3 sm:gap-4 p-2.5 sm:p-3.5 rounded-2xl bg-[#171F1B] border border-[#28342D] self-start flex-shrink-0 shadow-md">
+                  <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl bg-white p-1.5 sm:p-2.5 flex items-center justify-center shadow-sm flex-shrink-0">
                     <img
                       src="/assets/gfg-official-logo.png"
                       alt="GeeksforGeeks Campus Body"
                       className="w-full h-full object-contain"
                     />
                   </div>
-                  <div className="w-px h-12 sm:h-14 bg-[#28342D]"></div>
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-white p-2 sm:p-2.5 flex items-center justify-center shadow-sm">
+                  <div className="w-px h-10 sm:h-14 bg-[#28342D]"></div>
+                  <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl bg-white p-1.5 sm:p-2.5 flex items-center justify-center shadow-sm flex-shrink-0">
                     <img
                       src="/assets/jamia-logo.png"
                       alt="Jamia Hamdard Crest"
@@ -693,7 +695,7 @@ export default function RegistrationPage() {
             </nav>
 
             {/* Mobile Stepper */}
-            <div className="sm:hidden rounded-xl bg-[#121916] border border-[#28342D] p-4 space-y-2.5 shadow-sm">
+            <div className="sm:hidden rounded-xl bg-[#121916] border border-[#28342D] p-3.5 sm:p-4 space-y-2.5 shadow-sm w-full min-w-0">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-medium text-[#A2ADA6]">
                   Step {currentStep} of 4: <strong className="text-[#F5F7F5]">{STEPS[currentStep - 1]?.title}</strong>
@@ -715,12 +717,12 @@ export default function RegistrationPage() {
               <motion.div
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/40 text-rose-300 text-xs sm:text-sm flex items-start gap-3 shadow-md"
+                className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/40 text-rose-300 text-xs sm:text-sm flex items-start gap-3 shadow-md w-full min-w-0"
               >
                 <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
+                <div className="space-y-0.5 min-w-0 flex-1">
                   <p className="font-semibold text-white">Notice</p>
-                  <p className="text-rose-200/90 leading-relaxed">{submitError}</p>
+                  <p className="text-rose-200/90 leading-relaxed break-words">{submitError}</p>
                 </div>
               </motion.div>
             )}
@@ -728,7 +730,7 @@ export default function RegistrationPage() {
             {/* ─── 3. PRIMARY FORM SURFACE ───────────────────────────── */}
             <div
               id="registration-form-section"
-              className="rounded-2xl bg-[#121916] border border-[#28342D] p-6 sm:p-10 shadow-xl relative scroll-mt-28"
+              className="rounded-2xl bg-[#121916] border border-[#28342D] p-4 sm:p-10 shadow-xl relative scroll-mt-28 w-full min-w-0"
             >
               <AnimatePresence mode="wait">
                 {/* ─── STEP 01: TEAM DETAILS ─────────────────────────────── */}

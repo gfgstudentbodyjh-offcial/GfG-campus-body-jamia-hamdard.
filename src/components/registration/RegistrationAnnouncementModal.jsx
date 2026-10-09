@@ -55,7 +55,7 @@ export default function RegistrationAnnouncementModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg rounded-2xl bg-[#121916] border border-[#28342D] shadow-2xl p-6 sm:p-7 text-[#F5F7F5] z-10 overflow-hidden"
+            className="relative w-full max-w-lg rounded-2xl bg-[#121916] border border-[#28342D] shadow-2xl p-5 sm:p-7 text-[#F5F7F5] z-10 overflow-hidden"
           >
             {/* Subtle Top Ambient Glow Accent */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 bg-[#22A447] rounded-full blur-[2px]" />

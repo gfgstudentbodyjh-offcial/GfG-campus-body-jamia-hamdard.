@@ -60,8 +60,8 @@ export default function RegistrationSuccessModal({ registration, onReset }) {
       {/* Official Registration Pass */}
       <div className="relative rounded-2xl bg-[#121916] border border-[#28342D] shadow-xl overflow-hidden print:border print:border-black print:bg-white print:text-black">
         {/* Top Header Strip */}
-        <div className="p-6 sm:p-7 border-b border-[#28342D] bg-[#171F1B] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
+        <div className="p-4 sm:p-7 border-b border-[#28342D] bg-[#171F1B] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-14 h-14 rounded-xl bg-white p-1.5 border border-[#28342D] flex items-center justify-center flex-shrink-0 shadow-sm">
               <img
                 src="/assets/gfg-official-logo.png"
@@ -69,16 +69,16 @@ export default function RegistrationSuccessModal({ registration, onReset }) {
                 className="w-full h-full object-contain"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2 text-xs text-[#A2ADA6]">
                 <span className="font-medium text-[#22A447]">GFG Campus Body</span>
                 <span>•</span>
                 <span>Jamia Hamdard</span>
               </div>
-              <h3 className="text-base sm:text-lg font-bold text-[#F5F7F5] mt-0.5">
+              <h3 className="text-base sm:text-lg font-bold text-[#F5F7F5] mt-0.5 truncate">
                 {registration.eventName || 'THINKTANK IDEATHON 2026'}
               </h3>
-              <span className="text-[11px] text-[#A2ADA6]">
+              <span className="text-[11px] text-[#A2ADA6] block">
                 Under 5G Use Case Lab
               </span>
             </div>
@@ -105,9 +105,9 @@ export default function RegistrationSuccessModal({ registration, onReset }) {
         </div>
 
         {/* Ticket Body Grid */}
-        <div className="p-6 sm:p-8 space-y-6">
+        <div className="p-4 sm:p-8 space-y-6">
           {/* Key Metas */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
             <div className="p-3.5 rounded-lg bg-[#171F1B] border border-[#28342D]">
               <span className="text-[11px] text-[#707E75] block">Team Name</span>
               <span className="text-sm font-semibold text-[#F5F7F5] mt-0.5 block truncate">
