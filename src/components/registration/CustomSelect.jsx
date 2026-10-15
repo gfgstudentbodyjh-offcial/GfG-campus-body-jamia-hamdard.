@@ -19,9 +19,12 @@ export default function CustomSelect({
   className = ''
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const containerRef = useRef(null);
   const buttonRef = useRef(null);
+  const listboxRef = useRef(null);
+  const optionRefs = useRef([]);
 
   // Close on outside click
   useEffect(() => {
@@ -33,6 +36,31 @@ export default function CustomSelect({
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
+
+  // Compute dropdown placement (upward vs downward) and scroll highlighted item into view
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      // If cramped below (< 210px) and more space exists above, flip upward
+      if (spaceBelow < 210 && spaceAbove > 180) {
+        setOpenUpward(true);
+      } else {
+        setOpenUpward(false);
+        // On small mobile screens, gently adjust scroll if button is too close to bottom
+        if (spaceBelow < 180) {
+          buttonRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && highlightedIndex >= 0 && optionRefs.current[highlightedIndex]) {
+      optionRefs.current[highlightedIndex].scrollIntoView({ block: 'nearest' });
+    }
+  }, [highlightedIndex, isOpen]);
 
   const selectedOption = options.find((opt) => opt.value === value);
 
@@ -117,9 +145,13 @@ export default function CustomSelect({
 
         {isOpen && (
           <div
+            ref={listboxRef}
             role="listbox"
             tabIndex={-1}
-            className="absolute z-50 mt-1.5 w-full rounded-lg bg-[#121916] border border-[#28342D] shadow-xl overflow-hidden py-1 backdrop-blur-md animate-in fade-in-50 duration-100"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+            className={`absolute z-50 w-full rounded-lg bg-[#121916] border border-[#28342D] shadow-2xl overflow-y-auto max-h-48 sm:max-h-56 py-1 backdrop-blur-md animate-in fade-in-50 duration-100 overscroll-contain touch-pan-y ${
+              openUpward ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+            }`}
           >
             {options.map((option, idx) => {
               const isSelected = option.value === value;
@@ -127,6 +159,7 @@ export default function CustomSelect({
               return (
                 <div
                   key={option.value || idx}
+                  ref={(el) => (optionRefs.current[idx] = el)}
                   role="option"
                   aria-selected={isSelected}
                   onClick={() => handleSelect(option.value)}
