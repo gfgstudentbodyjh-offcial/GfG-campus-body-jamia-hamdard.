@@ -15,20 +15,22 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-// Intercept requests to attach JWT Token (except fresh authentication endpoints)
+// Intercept requests to attach JWT Token (except fresh authentication endpoints and public registration)
 api.interceptors.request.use((config) => {
-  const isAuthEndpoint = config.url && (
+  const isPublicEndpoint = config.url && (
     config.url.includes('/auth/login') ||
     config.url.includes('/auth/admin-login') ||
-    config.url.includes('/auth/signup')
+    config.url.includes('/auth/signup') ||
+    config.url.includes('/registration')
   );
 
-  if (!isAuthEndpoint) {
+  if (!isPublicEndpoint) {
     const token = localStorage.getItem('gfg_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -120,7 +122,8 @@ api.interceptors.response.use(
       config.url.includes('/auth/login') ||
       config.url.includes('/auth/admin-login') ||
       config.url.includes('/auth/signup') ||
-      config.url.includes('/auth/refresh')
+      config.url.includes('/auth/refresh') ||
+      config.url.includes('/registration')
     );
 
     // ── Silent Token Refresh on 401 Unauthorized ──

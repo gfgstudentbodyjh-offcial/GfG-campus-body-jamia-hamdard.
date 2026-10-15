@@ -58,24 +58,29 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       if (!token) {
-        // Attempt silent refresh if no token in memory
-        try {
-          const refreshRes = await api.post('/auth/refresh');
-          if (refreshRes.data?.token) {
-            localStorage.setItem('gfg_token', refreshRes.data.token);
-            setToken(refreshRes.data.token);
-            setUser(refreshRes.data.user);
-            setMember(refreshRes.data.member || null);
-            setAdminAccess(refreshRes.data.adminAccess || null);
-            cacheService.set('auth_user_session', {
-              user: refreshRes.data.user,
-              member: refreshRes.data.member,
-              adminAccess: refreshRes.data.adminAccess
-            });
-            setLoading(false);
-            return;
+        // Only attempt silent refresh if there is evidence of an existing session
+        const hasSession = localStorage.getItem('gfg_has_session') === 'true';
+        if (hasSession) {
+          try {
+            const refreshRes = await api.post('/auth/refresh');
+            if (refreshRes.data?.token) {
+              localStorage.setItem('gfg_token', refreshRes.data.token);
+              setToken(refreshRes.data.token);
+              setUser(refreshRes.data.user);
+              setMember(refreshRes.data.member || null);
+              setAdminAccess(refreshRes.data.adminAccess || null);
+              cacheService.set('auth_user_session', {
+                user: refreshRes.data.user,
+                member: refreshRes.data.member,
+                adminAccess: refreshRes.data.adminAccess
+              });
+              setLoading(false);
+              return;
+            }
+          } catch (e) {
+            localStorage.removeItem('gfg_has_session');
           }
-        } catch (e) {}
+        }
 
         setUser(null);
         setMember(null);
@@ -119,6 +124,7 @@ export const AuthProvider = ({ children }) => {
       const res = await api.post('/auth/login', { email, password });
       const { token: newToken, user: userData, member: memberData, adminAccess: adminData } = res.data;
       localStorage.setItem('gfg_token', newToken);
+      localStorage.setItem('gfg_has_session', 'true');
       setToken(newToken);
       setUser(userData);
       setMember(memberData);
@@ -139,6 +145,7 @@ export const AuthProvider = ({ children }) => {
       const res = await api.post('/auth/admin-login', { email, password, pin });
       const { token: newToken, user: userData, member: memberData, adminAccess: adminData } = res.data;
       localStorage.setItem('gfg_token', newToken);
+      localStorage.setItem('gfg_has_session', 'true');
       setToken(newToken);
       setUser(userData);
       setMember(memberData);
@@ -158,6 +165,7 @@ export const AuthProvider = ({ children }) => {
       const res = await api.post('/auth/signup', signupData);
       const { token: newToken, user: userData, member: memberData } = res.data;
       localStorage.setItem('gfg_token', newToken);
+      localStorage.setItem('gfg_has_session', 'true');
       setToken(newToken);
       setUser(userData);
       setMember(memberData);
@@ -215,6 +223,7 @@ export const AuthProvider = ({ children }) => {
     }
     cacheService.clearAdminCache();
     localStorage.removeItem('gfg_token');
+    localStorage.removeItem('gfg_has_session');
     setToken('');
     setUser(null);
     setMember(null);

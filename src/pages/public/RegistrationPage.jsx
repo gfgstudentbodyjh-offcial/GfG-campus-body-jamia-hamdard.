@@ -306,10 +306,16 @@ export default function RegistrationPage() {
     if (stepNumber === 4) {
       const size = parseInt(formData.teamSize, 10);
       const neededMembers = (size || 3) - 1;
+      const cleanLeaderEmail = formData.leader.email?.trim().toLowerCase();
+      const seenEmails = new Map();
+      if (cleanLeaderEmail) {
+        seenEmails.set(cleanLeaderEmail, 'Team Leader');
+      }
 
       for (let i = 0; i < neededMembers; i++) {
         const memberNum = i + 2;
         const member = formData.members[i] || {};
+        const memEmail = member.email?.trim().toLowerCase();
 
         if (!member.name?.trim()) {
           newErrors[`member_${memberNum}_name`] = `Member ${memberNum} Name is required.`;
@@ -318,7 +324,12 @@ export default function RegistrationPage() {
           newErrors[`member_${memberNum}_email`] = `Member ${memberNum} Email is required.`;
         } else if (!isValidEmail(member.email)) {
           newErrors[`member_${memberNum}_email`] = `Valid email is required.`;
+        } else if (memEmail && seenEmails.has(memEmail)) {
+          newErrors[`member_${memberNum}_email`] = `Must be unique. Already entered for ${seenEmails.get(memEmail)}.`;
+        } else if (memEmail) {
+          seenEmails.set(memEmail, `Member ${memberNum}`);
         }
+
         if (!member.mobile?.trim()) {
           newErrors[`member_${memberNum}_mobile`] = `Mobile number is required.`;
         } else if (!isValidPhone(member.mobile)) {
@@ -358,9 +369,10 @@ export default function RegistrationPage() {
     }
   };
 
-  // Final Submission Handler
+  // Final Submission Handler (Strict Confirmation - Never False Success)
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
+    if (submitting) return; // Prevent double submission
     setSubmitError(null);
 
     // Validate all 4 steps
@@ -389,7 +401,7 @@ export default function RegistrationPage() {
     }
     if (!step4Valid) {
       setCurrentStep(4);
-      setSubmitError('Please complete all member fields (Name, Email, 10-digit Mobile, Department) highlighted above.');
+      setSubmitError('Please correct member details (Each member must have a unique email address, valid 10-digit mobile, and department).');
       window.scrollTo({ top: 220, behavior: 'smooth' });
       return;
     }
@@ -418,99 +430,48 @@ export default function RegistrationPage() {
         }))
       };
 
-      // 1. Submit directly to Website Backend API (which saves to Mongo and syncs to Google Sheets)
-      let backendResult = null;
-      try {
-        const res = await api.post('/registration', payload);
-        if (res.data?.success) {
-          backendResult = res.data.data;
-        }
-      } catch (apiErr) {
-        // If 409 duplicate team name, jump to Step 1 and notify user clearly
-        if (apiErr.response?.status === 409) {
-          setCurrentStep(1);
-          setSubmitError(apiErr.response.data?.message || `A team named "${formData.teamName.trim()}" is already registered. Please enter a different team name.`);
-          window.scrollTo({ top: 120, behavior: 'smooth' });
-          return;
-        }
+      // Submit to Backend API (which synchronously confirms persistence in Google Sheets & MongoDB)
+      const res = await api.post('/registration', payload);
 
-        // Direct Google Sheets fallback only if backend server is unreachable
-        const sheetsUrl = import.meta.env.VITE_GOOGLE_SHEETS_SCRIPT_URL;
-        if (sheetsUrl && (apiErr.code === 'ERR_NETWORK' || !apiErr.response)) {
-          const sheetsPayload = {
-            teamName: formData.teamName.trim(),
-            memberCount: parseInt(formData.teamSize, 10),
-            category: formData.category,
-            mentorName: formData.facultyMentor.trim(),
-            leader: {
-              name: formData.leader.name.trim(),
-              email: formData.leader.email.trim(),
-              mobile: formData.leader.mobile.trim(),
-              department: formData.leader.department.trim()
-            },
-            members: formData.members.slice(0, parseInt(formData.teamSize, 10) - 1).map((m) => ({
-              name: m.name.trim(),
-              email: m.email.trim(),
-              mobile: m.mobile.trim(),
-              department: m.department.trim()
-            }))
-          };
-
-          try {
-            const sheetsRes = await fetch(sheetsUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify(sheetsPayload)
-            });
-            if (sheetsRes.ok) {
-              const sheetsData = await sheetsRes.json();
-              if (sheetsData.success) {
-                backendResult = {
-                  registrationId: sheetsData.registrationId || `REG-${Date.now()}`,
-                  eventName: 'THINKTANK IDEATHON 2026',
-                  teamName: formData.teamName.trim(),
-                  teamSize: parseInt(formData.teamSize, 10),
-                  category: formData.category,
-                  facultyMentor: formData.facultyMentor.trim(),
-                  leader: formData.leader,
-                  members: formData.members.slice(0, parseInt(formData.teamSize, 10) - 1),
-                  status: 'Registered'
-                };
-              }
-            }
-          } catch (sErr) {
-            console.warn('[Direct Google Sheets fallback error]:', sErr);
-          }
-        }
-
-        if (!backendResult) {
-          throw apiErr;
-        }
+      if (res.data?.success && res.data?.data && res.data?.data?.registrationId) {
+        // Confirmed persistence verified
+        setConfirmedRegistration(res.data.data);
+        window.scrollTo({ top: 80, behavior: 'smooth' });
+      } else {
+        throw new Error(res.data?.message || 'Server did not return a confirmed Registration ID. Please try again.');
       }
-
-      const finalRecord = backendResult || {
-        registrationId: `REG-${Date.now()}`,
-        eventName: 'THINKTANK IDEATHON 2026',
-        teamName: formData.teamName.trim(),
-        teamSize: parseInt(formData.teamSize, 10),
-        category: formData.category,
-        facultyMentor: formData.facultyMentor.trim(),
-        leader: formData.leader,
-        members: formData.members.slice(0, parseInt(formData.teamSize, 10) - 1),
-        status: 'Registered'
-      };
-
-      setConfirmedRegistration(finalRecord);
-      window.scrollTo({ top: 80, behavior: 'smooth' });
     } catch (err) {
       console.error('Registration submission error:', err);
+
+      // If 409 duplicate team name, jump to Step 1 and notify user clearly
+      if (err.response?.status === 409) {
+        setCurrentStep(1);
+        setSubmitError(err.response.data?.message || `A team named "${formData.teamName.trim()}" is already registered. Please choose a different team name.`);
+        window.scrollTo({ top: 120, behavior: 'smooth' });
+        return;
+      }
+
+      // If 400 validation error (e.g., duplicate email)
+      if (err.response?.status === 400 || err.response?.status === 422) {
+        const msg = err.response.data?.message || 'Validation failed. Please verify your team details.';
+        if (msg.toLowerCase().includes('unique email') || msg.toLowerCase().includes('member')) {
+          setCurrentStep(4);
+        }
+        setSubmitError(msg);
+        window.scrollTo({ top: 120, behavior: 'smooth' });
+        return;
+      }
+
       const serverMessage =
         err.response?.data?.message ||
         err.response?.data?.error ||
-        (err.code === 'ERR_NETWORK'
-          ? 'Unable to connect to registration server. Please check your network or try again shortly.'
-          : 'An unexpected error occurred during submission. Your entered data has been preserved. Please try again.');
+        (err.code === 'ECONNABORTED' || err.message?.includes('timeout')
+          ? 'Registration request timed out while communicating with official records. Please check your network and retry. Your entered data has been preserved.'
+          : err.code === 'ERR_NETWORK'
+            ? 'Unable to connect to registration server. Please check your internet connection and try again. Your entered data has been preserved.'
+            : 'An unexpected error occurred during submission. Your entered data has been preserved. Please try again.');
       setSubmitError(serverMessage);
+      window.scrollTo({ top: 120, behavior: 'smooth' });
     } finally {
       setSubmitting(false);
     }
