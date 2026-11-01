@@ -25,6 +25,8 @@ import Hero3DVisual from '../../components/common/Hero3DVisual';
 import GalleryLightbox from '../../components/common/GalleryLightbox';
 import TechCard from '../../components/common/TechCard';
 import CampusMantriBadge from '../../components/common/CampusMantriBadge';
+import MobileEventsCarousel from '../../components/common/MobileEventsCarousel';
+import MobileLeadershipCarousel from '../../components/common/MobileLeadershipCarousel';
 
 // Team Icon Mapper
 const getTeamIcon = (iconName) => {
@@ -424,25 +426,6 @@ export default function Home() {
                 <Link to="/events" className="w-full sm:w-auto px-7 py-3.5 sm:py-4 rounded-xl gradient-button font-bold text-base flex items-center justify-center gap-3 shadow-lg shadow-[#2f9e44]/25 hover:scale-[1.02] active:scale-[0.98] transition-transform">
                   Explore Events <ArrowRight className="w-5 h-5" />
                 </Link>
-                <Link
-                  to="/registration"
-                  className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-[#171F1B] border border-[#28342D] hover:border-amber-500/50 hover:bg-[#1C2621] text-white flex items-center justify-center gap-3 shadow-lg shadow-black/40 hover:scale-[1.02] active:scale-[0.98] transition-all group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Sparkles className="w-4 h-4 text-amber-400 group-hover:rotate-12 transition-transform" />
-                  </div>
-                  <div className="text-left flex flex-col justify-center">
-                    <div className="flex items-center gap-1.5 font-bold text-sm sm:text-base leading-tight">
-                      <span>Ideathon 2026</span>
-                      <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        Closed
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-[#A2ADA6] font-medium leading-tight mt-0.5 group-hover:text-white transition-colors">
-                      Registrations Closed • View Details
-                    </span>
-                  </div>
-                </Link>
                 <Link to="/community" className="w-full sm:w-auto px-7 py-3.5 sm:py-4 rounded-xl bg-[#121721] border border-[#30363d] hover:border-[#2f9e44]/60 font-semibold text-base text-gray-200 hover:text-white flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all">
                   Join Community
                 </Link>
@@ -676,106 +659,113 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Continuous Seamless Infinite Loop Marquee (Leftward continuous motion) */}
-            <InfiniteMarquee direction="left" duration={45} gapClass="gap-5 sm:gap-6">
-              {leadershipShowcaseList.map((leader, idx) => {
-                const IconComponent = getTeamIcon(leader.icon);
+            {/* Mobile Carousel (3 cards simultaneous, touch gestures, manual swipe, no autoplay) */}
+            <div className="block sm:hidden">
+              <MobileLeadershipCarousel leaders={leadershipShowcaseList} />
+            </div>
 
-                return (
-                  <TechCard
-                    key={`${leader._id}-${idx}`}
-                    className="w-[82vw] sm:w-[320px] md:w-[500px] lg:w-[540px] flex-shrink-0 snap-start p-5 sm:p-6 border-[#2f9e44]/40 bg-gradient-to-br from-[#121721] via-[#0a0d12] to-[#142e16] flex flex-col justify-between space-y-4 shadow-xl rounded-2xl group transition-all"
-                  >
-                    {/* Domain Header: Team Icon + EXACT Team Name */}
-                    <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#30363d]/80">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="p-2 rounded-xl bg-[#2f9e44]/15 text-[#2f9e44] border border-[#2f9e44]/30 flex-shrink-0 group-hover:scale-105 transition-transform">
-                          <IconComponent className="w-4 h-4" />
+            {/* Desktop Continuous Seamless Infinite Loop Marquee: Preserved unchanged */}
+            <div className="hidden sm:block">
+              <InfiniteMarquee direction="left" duration={45} gapClass="gap-5 sm:gap-6">
+                {leadershipShowcaseList.map((leader, idx) => {
+                  const IconComponent = getTeamIcon(leader.icon);
+
+                  return (
+                    <TechCard
+                      key={`${leader._id}-${idx}`}
+                      className="w-[82vw] sm:w-[320px] md:w-[500px] lg:w-[540px] flex-shrink-0 snap-start p-5 sm:p-6 border-[#2f9e44]/40 bg-gradient-to-br from-[#121721] via-[#0a0d12] to-[#142e16] flex flex-col justify-between space-y-4 shadow-xl rounded-2xl group transition-all"
+                    >
+                      {/* Domain Header: Team Icon + EXACT Team Name */}
+                      <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#30363d]/80">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="p-2 rounded-xl bg-[#2f9e44]/15 text-[#2f9e44] border border-[#2f9e44]/30 flex-shrink-0 group-hover:scale-105 transition-transform">
+                            <IconComponent className="w-4 h-4" />
+                          </div>
+                          <h3 className="text-sm sm:text-base font-bold text-white truncate leading-tight group-hover:text-[#2f9e44] transition-colors">
+                            {leader.teamName}
+                          </h3>
                         </div>
-                        <h3 className="text-sm sm:text-base font-bold text-white truncate leading-tight group-hover:text-[#2f9e44] transition-colors">
-                          {leader.teamName}
-                        </h3>
+
+                        <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded uppercase flex-shrink-0 ${leader.isLead ? 'bg-[#2f9e44] text-white' : 'bg-[#18202c] text-gray-300 border border-[#30363d]'}`}>
+                          {leader.isLead ? 'Lead' : 'Co-Lead'}
+                        </span>
                       </div>
 
-                      <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded uppercase flex-shrink-0 ${leader.isLead ? 'bg-[#2f9e44] text-white' : 'bg-[#18202c] text-gray-300 border border-[#30363d]'}`}>
-                        {leader.isLead ? 'Lead' : 'Co-Lead'}
-                      </span>
-                    </div>
+                      {/* Responsive Member Layout: PORTRAIT on Mobile (<md) → LANDSCAPE on Laptop/Desktop (>=md) */}
+                      <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-4 md:gap-4 lg:gap-5 min-w-0 flex-1">
+                        {/* Member Portrait (Centered on Mobile, Left-aligned on Desktop) */}
+                        <img
+                          src={leader.photo}
+                          alt={`${leader.name}, ${leader.roleTitle}`}
+                          loading="lazy"
+                          style={{ objectPosition: leader.imagePosition || 'center 50%' }}
+                          className={`w-28 h-32 sm:w-32 sm:h-36 md:w-32 md:h-38 lg:w-34 lg:h-40 rounded-2xl object-cover border-2 shadow-xl flex-shrink-0 mx-auto md:mx-0 ${leader.isLead ? 'border-[#2f9e44]' : 'border-gray-600'}`}
+                        />
 
-                    {/* Responsive Member Layout: PORTRAIT on Mobile (<md) → LANDSCAPE on Laptop/Desktop (>=md) */}
-                    <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-4 md:gap-4 lg:gap-5 min-w-0 flex-1">
-                      {/* Member Portrait (Centered on Mobile, Left-aligned on Desktop) */}
-                      <img
-                        src={leader.photo}
-                        alt={`${leader.name}, ${leader.roleTitle}`}
-                        loading="lazy"
-                        style={{ objectPosition: leader.imagePosition || 'center 50%' }}
-                        className={`w-28 h-32 sm:w-32 sm:h-36 md:w-32 md:h-38 lg:w-34 lg:h-40 rounded-2xl object-cover border-2 shadow-xl flex-shrink-0 mx-auto md:mx-0 ${leader.isLead ? 'border-[#2f9e44]' : 'border-gray-600'}`}
-                      />
+                        {/* Member Details + Bio (Below image on Mobile, Right-aligned on Desktop) */}
+                        <div className="min-w-0 flex-1 flex flex-col justify-between space-y-2.5 w-full">
+                          <div>
+                            <h4 className="text-base sm:text-lg md:text-xl font-bold text-white truncate leading-tight">
+                              {leader.name}
+                            </h4>
+                            <p className="text-[11px] font-mono text-gray-400 truncate mt-0.5">@{leader.username || 'user'}</p>
 
-                      {/* Member Details + Bio (Below image on Mobile, Right-aligned on Desktop) */}
-                      <div className="min-w-0 flex-1 flex flex-col justify-between space-y-2.5 w-full">
-                        <div>
-                          <h4 className="text-base sm:text-lg md:text-xl font-bold text-white truncate leading-tight">
-                            {leader.name}
-                          </h4>
-                          <p className="text-[11px] font-mono text-gray-400 truncate mt-0.5">@{leader.username || 'user'}</p>
+                            <div className="mt-1.5">
+                              <span className="text-[10px] sm:text-xs font-mono font-bold text-[#2f9e44] uppercase tracking-wider bg-[#2f9e44]/15 border border-[#2f9e44]/30 px-2.5 py-0.5 rounded-md inline-block">
+                                {leader.roleTitle}
+                              </span>
+                            </div>
+                          </div>
 
-                          <div className="mt-1.5">
-                            <span className="text-[10px] sm:text-xs font-mono font-bold text-[#2f9e44] uppercase tracking-wider bg-[#2f9e44]/15 border border-[#2f9e44]/30 px-2.5 py-0.5 rounded-md inline-block">
-                              {leader.roleTitle}
-                            </span>
+                          {/* Vision / Bio Quote Container (Constrained, Non-clipped) */}
+                          <div className="bg-[#0a0d12]/90 p-2.5 sm:p-3 rounded-xl border border-[#30363d] overflow-hidden">
+                            <p className="text-xs text-gray-300 leading-relaxed italic line-clamp-3">
+                              "{leader.bio}"
+                            </p>
                           </div>
                         </div>
-
-                        {/* Vision / Bio Quote Container (Constrained, Non-clipped) */}
-                        <div className="bg-[#0a0d12]/90 p-2.5 sm:p-3 rounded-xl border border-[#30363d] overflow-hidden">
-                          <p className="text-xs text-gray-300 leading-relaxed italic line-clamp-3">
-                            "{leader.bio}"
-                          </p>
-                        </div>
                       </div>
-                    </div>
 
-                    {/* Socials & Profile Action (Clean bottom rail) */}
-                    <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#30363d]/80">
-                      {leader.socials ? (
-                        <div className="flex items-center gap-1.5">
-                          {leader.socials.email && (
-                            <a href={`mailto:${leader.socials.email}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#2f9e44] transition-colors border border-[#30363d]" title="Email">
-                              <Mail className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                          {leader.socials.linkedin && (
-                            <a href={leader.socials.linkedin.startsWith('http') ? leader.socials.linkedin : `https://linkedin.com/in/${leader.socials.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#0077b5] transition-colors border border-[#30363d]" title="LinkedIn">
-                              <Linkedin className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                          {leader.socials.instagram && (
-                            <a href={leader.socials.instagram.startsWith('http') ? leader.socials.instagram : `https://instagram.com/${leader.socials.instagram}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#e1306c] transition-colors border border-[#30363d]" title="Instagram">
-                              <Instagram className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                          {leader.socials.github && (
-                            <a href={leader.socials.github.startsWith('http') ? leader.socials.github : `https://github.com/${leader.socials.github}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-[#18202c] text-gray-300 hover:text-white hover:bg-gray-700 transition-colors border border-[#30363d]" title="GitHub">
-                              <Github className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                        </div>
-                      ) : <div />}
+                      {/* Socials & Profile Action (Clean bottom rail) */}
+                      <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#30363d]/80">
+                        {leader.socials ? (
+                          <div className="flex items-center gap-1.5">
+                            {leader.socials.email && (
+                              <a href={`mailto:${leader.socials.email}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#2f9e44] transition-colors border border-[#30363d]" title="Email">
+                                <Mail className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                            {leader.socials.linkedin && (
+                              <a href={leader.socials.linkedin.startsWith('http') ? leader.socials.linkedin : `https://linkedin.com/in/${leader.socials.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#0077b5] transition-colors border border-[#30363d]" title="LinkedIn">
+                                <Linkedin className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                            {leader.socials.instagram && (
+                              <a href={leader.socials.instagram.startsWith('http') ? leader.socials.instagram : `https://instagram.com/${leader.socials.instagram}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-[#18202c] text-gray-300 hover:text-white hover:bg-[#e1306c] transition-colors border border-[#30363d]" title="Instagram">
+                                <Instagram className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                            {leader.socials.github && (
+                              <a href={leader.socials.github.startsWith('http') ? leader.socials.github : `https://github.com/${leader.socials.github}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-[#18202c] text-gray-300 hover:text-white hover:bg-gray-700 transition-colors border border-[#30363d]" title="GitHub">
+                                <Github className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                          </div>
+                        ) : <div />}
 
-                      <Link
-                        to={leader.profileUrl || '/teams'}
-                        className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#2f9e44] hover:text-white transition-colors bg-[#2f9e44]/10 hover:bg-[#2f9e44] px-3 py-1.5 rounded-xl border border-[#2f9e44]/30 ml-auto"
-                      >
-                        <span>Profile</span>
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  </TechCard>
-                );
-              })}
-            </InfiniteMarquee>
+                        <Link
+                          to={leader.profileUrl || '/teams'}
+                          className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#2f9e44] hover:text-white transition-colors bg-[#2f9e44]/10 hover:bg-[#2f9e44] px-3 py-1.5 rounded-xl border border-[#2f9e44]/30 ml-auto"
+                        >
+                          <span>Profile</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </TechCard>
+                  );
+                })}
+              </InfiniteMarquee>
+            </div>
           </section>
         )}
 
@@ -795,63 +785,74 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Marquee Container: LEFT → RIGHT */}
-            <InfiniteMarquee direction="right" duration={30} gapClass="gap-4 sm:gap-6">
-              {upcomingEvents.map((ev) => {
-                const upTitle = ev.title || ev.name;
-                const upBanner = ev.banner || ev.image || ev.thumbnailUrl || ev.thumbnail?.url || ev.thumbnail;
-                const upDateStr = ev.date
-                  ? (typeof ev.date === 'string' ? ev.date : new Date(ev.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }))
-                  : null;
-                const upDesc = ev.description || ev.shortDescription;
-                return (
-                  <TechCard
-                    key={ev._id || ev.legacyId}
-                    className="w-[84vw] sm:w-[350px] flex-shrink-0 snap-start border-[#30363d] hover:border-[#2f9e44] flex flex-col justify-between group bg-[#121721] shadow-xl"
-                  >
-                    <div>
-                      <div className="h-36 sm:h-44 relative overflow-hidden bg-[#0d1117]">
-                        <img
-                          src={upBanner}
-                          alt={upTitle}
-                          loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80'; }}
-                        />
-                        {/* Live Registration Badge */}
-                        <span className="absolute top-3 left-3 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-mono font-bold bg-[#0a0d12]/90 text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5 shadow-lg">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                          <span>{ev.status || 'REGISTRATION OPEN'}</span>
-                        </span>
+            {/* Mobile Carousel (3 cards simultaneous, touch gestures, manual swipe, no autoplay) */}
+            <div className="block sm:hidden">
+              <MobileEventsCarousel
+                events={upcomingEvents}
+                type="upcoming"
+                onSelectEvent={setSelectedEventModal}
+              />
+            </div>
+
+            {/* Desktop Marquee Container: LEFT → RIGHT (Preserved unchanged) */}
+            <div className="hidden sm:block">
+              <InfiniteMarquee direction="right" duration={30} gapClass="gap-4 sm:gap-6">
+                {upcomingEvents.map((ev) => {
+                  const upTitle = ev.title || ev.name;
+                  const upBanner = ev.banner || ev.image || ev.thumbnailUrl || ev.thumbnail?.url || ev.thumbnail;
+                  const upDateStr = ev.date
+                    ? (typeof ev.date === 'string' ? ev.date : new Date(ev.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }))
+                    : null;
+                  const upDesc = ev.description || ev.shortDescription;
+                  return (
+                    <TechCard
+                      key={ev._id || ev.legacyId}
+                      className="w-[84vw] sm:w-[350px] flex-shrink-0 snap-start border-[#30363d] hover:border-[#2f9e44] flex flex-col justify-between group bg-[#121721] shadow-xl"
+                    >
+                      <div>
+                        <div className="h-36 sm:h-44 relative overflow-hidden bg-[#0d1117]">
+                          <img
+                            src={upBanner}
+                            alt={upTitle}
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80'; }}
+                          />
+                          {/* Live Registration Badge */}
+                          <span className="absolute top-3 left-3 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-mono font-bold bg-[#0a0d12]/90 text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5 shadow-lg">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                            <span>{ev.status || 'REGISTRATION OPEN'}</span>
+                          </span>
+                        </div>
+
+                        <div className="p-4 sm:p-5 space-y-1.5 sm:space-y-2">
+                          <h3 className="text-sm sm:text-base font-extrabold text-white group-hover:text-[#2f9e44] transition-colors leading-snug">{upTitle}</h3>
+                          {upDateStr && <p className="text-xs text-[#2f9e44] font-semibold font-mono">{upDateStr}</p>}
+                          {upDesc && <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">{upDesc}</p>}
+                          {ev.partner && (
+                            <p className="text-[11px] text-gray-300 font-medium truncate">Partner: {ev.partner}</p>
+                          )}
+                          {ev.prizePool && (
+                            <p className="text-[11px] text-yellow-400 font-bold flex items-center gap-1">
+                              <Trophy className="w-3 h-3" /> Prize Pool: {ev.prizePool}
+                            </p>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="p-4 sm:p-5 space-y-1.5 sm:space-y-2">
-                        <h3 className="text-sm sm:text-base font-extrabold text-white group-hover:text-[#2f9e44] transition-colors leading-snug">{upTitle}</h3>
-                        {upDateStr && <p className="text-xs text-[#2f9e44] font-semibold font-mono">{upDateStr}</p>}
-                        {upDesc && <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">{upDesc}</p>}
-                        {ev.partner && (
-                          <p className="text-[11px] text-gray-300 font-medium truncate">Partner: {ev.partner}</p>
-                        )}
-                        {ev.prizePool && (
-                          <p className="text-[11px] text-yellow-400 font-bold flex items-center gap-1">
-                            <Trophy className="w-3 h-3" /> Prize Pool: {ev.prizePool}
-                          </p>
-                        )}
+                      <div className="p-4 sm:p-5 pt-0">
+                        <button
+                          onClick={() => setSelectedEventModal(ev)}
+                          className="w-full py-2 sm:py-2.5 rounded-xl bg-[#18202c] text-white hover:bg-[#2f9e44] transition-colors text-xs font-bold flex items-center justify-center gap-2 border border-[#30363d]"
+                        >
+                          Event Details <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    </div>
-
-                    <div className="p-4 sm:p-5 pt-0">
-                      <button
-                        onClick={() => setSelectedEventModal(ev)}
-                        className="w-full py-2 sm:py-2.5 rounded-xl bg-[#18202c] text-white hover:bg-[#2f9e44] transition-colors text-xs font-bold flex items-center justify-center gap-2 border border-[#30363d]"
-                      >
-                        Event Details <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </TechCard>
-                );
-              })}
-            </InfiniteMarquee>
+                    </TechCard>
+                  );
+                })}
+              </InfiniteMarquee>
+            </div>
           </section>
         )}
 
@@ -869,81 +870,92 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Auto-Scroll Marquee Container: RIGHT → LEFT */}
-            <InfiniteMarquee direction="left" duration={35} gapClass="gap-4 sm:gap-6">
-              {pastEvents.map((ev) => {
-                // SOURCE OF TRUTH: MongoDB / CMS fields — DO NOT substitute with generic text
-                const pastTitle = ev.title || ev.name;
-                const pastThumb = ev.thumbnail?.url || ev.thumbnail || ev.thumbnailUrl || ev.banner || ev.image;
-                const pastDateStr = ev.date
-                  ? (typeof ev.date === 'string' ? ev.date : new Date(ev.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }))
-                  : null;
-                // Only render actual description from CMS — NEVER a generic replacement
-                const pastDesc = ev.description || ev.shortDescription || null;
+            {/* Mobile Carousel (3 cards simultaneous, touch gestures, manual swipe, no autoplay) */}
+            <div className="block sm:hidden">
+              <MobileEventsCarousel
+                events={pastEvents}
+                type="past"
+                onSelectEvent={setSelectedEventModal}
+              />
+            </div>
 
-                return (
-                  <TechCard
-                    key={ev._id || ev.legacyId}
-                    className="w-[84vw] sm:w-[350px] flex-shrink-0 snap-start p-0 bg-[#0a0d12] border-[#30363d] overflow-hidden rounded-2xl flex flex-col justify-between group shadow-xl hover:border-[#2f9e44]/60 transition-all duration-300"
-                  >
-                    <div>
-                      {/* Thumbnail Image */}
-                      <div className="h-40 sm:h-48 relative overflow-hidden bg-[#18202c]">
-                        <img
-                          src={pastThumb}
-                          alt={pastTitle}
-                          loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80';
-                          }}
-                        />
+            {/* Desktop Auto-Scroll Marquee Container: RIGHT → LEFT (Preserved unchanged) */}
+            <div className="hidden sm:block">
+              <InfiniteMarquee direction="left" duration={35} gapClass="gap-4 sm:gap-6">
+                {pastEvents.map((ev) => {
+                  // SOURCE OF TRUTH: MongoDB / CMS fields — DO NOT substitute with generic text
+                  const pastTitle = ev.title || ev.name;
+                  const pastThumb = ev.thumbnail?.url || ev.thumbnail || ev.thumbnailUrl || ev.banner || ev.image;
+                  const pastDateStr = ev.date
+                    ? (typeof ev.date === 'string' ? ev.date : new Date(ev.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }))
+                    : null;
+                  // Only render actual description from CMS — NEVER a generic replacement
+                  const pastDesc = ev.description || ev.shortDescription || null;
 
-                        {/* Completed Badge */}
-                        <span className="absolute top-3 right-3 text-[10px] font-mono font-bold uppercase tracking-wider bg-[#2f9e44] text-white px-2.5 py-0.5 rounded-md shadow-lg flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> Completed
-                        </span>
+                  return (
+                    <TechCard
+                      key={ev._id || ev.legacyId}
+                      className="w-[84vw] sm:w-[350px] flex-shrink-0 snap-start p-0 bg-[#0a0d12] border-[#30363d] overflow-hidden rounded-2xl flex flex-col justify-between group shadow-xl hover:border-[#2f9e44]/60 transition-all duration-300"
+                    >
+                      <div>
+                        {/* Thumbnail Image */}
+                        <div className="h-40 sm:h-48 relative overflow-hidden bg-[#18202c]">
+                          <img
+                            src={pastThumb}
+                            alt={pastTitle}
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80';
+                            }}
+                          />
 
-                        {ev.category && (
-                          <span className="absolute top-3 left-3 text-[10px] font-mono uppercase font-bold text-gray-200 bg-[#0a0d12]/80 backdrop-blur-md px-2.5 py-0.5 rounded border border-gray-700/50">
-                            {ev.category}
+                          {/* Completed Badge */}
+                          <span className="absolute top-3 right-3 text-[10px] font-mono font-bold uppercase tracking-wider bg-[#2f9e44] text-white px-2.5 py-0.5 rounded-md shadow-lg flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> Completed
                           </span>
-                        )}
+
+                          {ev.category && (
+                            <span className="absolute top-3 left-3 text-[10px] font-mono uppercase font-bold text-gray-200 bg-[#0a0d12]/80 backdrop-blur-md px-2.5 py-0.5 rounded border border-gray-700/50">
+                              {ev.category}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* CMS Content — exact MongoDB fields only */}
+                        <div className="p-4 sm:p-5 space-y-2">
+                          <h3 className="text-sm sm:text-base font-extrabold text-white group-hover:text-[#2f9e44] transition-colors leading-snug">
+                            {pastTitle}
+                          </h3>
+
+                          {pastDateStr && (
+                            <div className="flex items-center gap-2 text-xs font-mono text-[#2f9e44] font-semibold">
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span>{pastDateStr}</span>
+                            </div>
+                          )}
+
+                          {/* Render description ONLY if it exists in CMS — no generic fallback */}
+                          {pastDesc && (
+                            <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">{pastDesc}</p>
+                          )}
+                        </div>
                       </div>
 
-                      {/* CMS Content — exact MongoDB fields only */}
-                      <div className="p-4 sm:p-5 space-y-2">
-                        <h3 className="text-sm sm:text-base font-extrabold text-white group-hover:text-[#2f9e44] transition-colors leading-snug">
-                          {pastTitle}
-                        </h3>
-
-                        {pastDateStr && (
-                          <div className="flex items-center gap-2 text-xs font-mono text-[#2f9e44] font-semibold">
-                            <Calendar className="w-3.5 h-3.5" />
-                            <span>{pastDateStr}</span>
-                          </div>
-                        )}
-
-                        {/* Render description ONLY if it exists in CMS — no generic fallback */}
-                        {pastDesc && (
-                          <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">{pastDesc}</p>
-                        )}
+                      <div className="p-4 sm:p-5 pt-0">
+                        <button
+                          onClick={() => setSelectedEventModal(ev)}
+                          className="w-full py-2 sm:py-2.5 rounded-xl bg-[#18202c] text-white hover:bg-[#2f9e44] transition-colors text-xs font-bold flex items-center justify-center gap-2 border border-[#30363d]"
+                        >
+                          View Event <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    </div>
-
-                    <div className="p-4 sm:p-5 pt-0">
-                      <button
-                        onClick={() => setSelectedEventModal(ev)}
-                        className="w-full py-2 sm:py-2.5 rounded-xl bg-[#18202c] text-white hover:bg-[#2f9e44] transition-colors text-xs font-bold flex items-center justify-center gap-2 border border-[#30363d]"
-                      >
-                        View Event <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </TechCard>
-                );
-              })}
-            </InfiniteMarquee>
+                    </TechCard>
+                  );
+                })}
+              </InfiniteMarquee>
+            </div>
           </section>
         )}
 

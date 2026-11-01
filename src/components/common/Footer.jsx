@@ -518,14 +518,6 @@ export default function Footer() {
             >
               Guidelines
             </button>
-            <span className="text-gray-700">•</span>
-            <Link
-              to="/admin/login"
-              className="text-gray-400 hover:text-[#2f9e44] font-medium flex items-center gap-0.5 transition-colors focus:outline-none"
-            >
-              <span>Admin Portal</span>
-              <ArrowUpRight className="w-3 h-3 text-[#2f9e44]" />
-            </Link>
           </div>
         </div>
 

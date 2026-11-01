@@ -116,17 +116,11 @@ export default function EventsPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs sm:text-sm font-bold text-white uppercase tracking-tight">THINKTANK IDEATHON 2026</span>
                 <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30 font-bold">5G USE CASE LAB</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">REGISTRATION CLOSED</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">CONCLUDED</span>
               </div>
               <p className="text-[11px] text-gray-300 mt-0.5">IDEAS × INNOVATION × IMPACT — Registrations have concluded. Shortlisted teams will be announced soon.</p>
             </div>
           </div>
-          <Link
-            to="/registration"
-            className="px-5 py-2.5 rounded-xl bg-[#171F1B] hover:bg-[#28342D] border border-[#28342D] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition-transform whitespace-nowrap flex-shrink-0"
-          >
-            View Event Overview <ArrowRight className="w-4 h-4" />
-          </Link>
         </div>
 
         {/* Events Grid */}
@@ -362,14 +356,6 @@ export default function EventsPage() {
                   >
                     <span>Open Registration Form</span>
                     <ExternalLink className="w-4 h-4" />
-                  </Link>
-                ) : (selectedEvent.status === 'Registration Open' || selectedEvent.isUpcoming) ? (
-                  <Link
-                    to="/registration"
-                    className="w-full py-3 rounded-xl gradient-button text-xs font-bold flex items-center justify-center gap-2 shadow-lg"
-                  >
-                    <span>Register Your Team Now</span>
-                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 ) : (
                   <button

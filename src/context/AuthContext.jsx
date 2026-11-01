@@ -245,6 +245,12 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {}
   };
 
+  const isAdmin = Boolean(
+    (adminAccess && adminAccess.adminRole) ||
+    user?.role === 'Super Admin' ||
+    user?.role === 'Admin'
+  );
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -261,7 +267,8 @@ export const AuthProvider = ({ children }) => {
       refreshUser,
       updateUserLocalCache,
       isAuthenticated: !!user,
-      isAdminAuthenticated: !!adminAccess && adminAccess.adminRole,
+      isAdmin,
+      isAdminAuthenticated: isAdmin,
       isAuthModalOpen,
       authModalTab,
       authReason,

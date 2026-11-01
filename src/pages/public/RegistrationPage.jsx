@@ -33,8 +33,6 @@ import Footer from '../../components/common/Footer';
 import CustomSelect from '../../components/registration/CustomSelect';
 import MemberCard from '../../components/registration/MemberCard';
 import RegistrationSuccessModal from '../../components/registration/RegistrationSuccessModal';
-import RegistrationAnnouncementModal from '../../components/registration/RegistrationAnnouncementModal';
-import RegistrationFlashBanner from '../../components/registration/RegistrationFlashBanner';
 
 const STEPS = [
   { id: 1, title: 'Team Details', short: 'Team', icon: Users, desc: 'Basic info & track' },
@@ -599,25 +597,6 @@ export default function RegistrationPage() {
       {/* Universal Website Navbar */}
       <div className="print:hidden">
         <Navbar />
-      </div>
-
-      {/* Sticky Flash Banner (Shown when modal is dismissed unless banner is dismissed) */}
-      <div className="print:hidden">
-        <RegistrationFlashBanner
-          isVisible={showFlashBanner}
-          onDismiss={handleDismissFlashBanner}
-          onRegisterClick={scrollToOverviewOrForm}
-        />
-      </div>
-
-      {/* Announcement Popup Modal */}
-      <div className="print:hidden">
-        <RegistrationAnnouncementModal
-          isOpen={showAnnouncementModal}
-          onClose={handleCloseAnnouncementModal}
-          onRegisterCTA={handleModalRegisterCTA}
-          onExploreDetails={handleModalExploreDetails}
-        />
       </div>
 
       {/* Subtle Ambient Lighting - strictly clipped to screen width to prevent mobile scaling issues */}

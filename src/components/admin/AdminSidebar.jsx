@@ -76,7 +76,7 @@ export default function AdminSidebar({ isLight, toggleTheme }) {
           </div>
           <div>
             <h2 className={`font-extrabold text-sm tracking-wide ${isLight ? 'text-gray-900' : 'text-white'}`}>GFG Admin OS</h2>
-            <p className="text-[10px] text-[#2f9e44] font-bold">V1 Console • Jamia Hamdard</p>
+            <p className="text-[10px] text-[#2f9e44] font-bold">V2 Console • Jamia Hamdard</p>
           </div>
         </div>
       </div>

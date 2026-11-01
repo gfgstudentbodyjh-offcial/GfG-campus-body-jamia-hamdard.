@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, Menu, X, User, BookOpen, Users, Trophy, Image as ImageIcon, LogOut, Shield, Bookmark, CreditCard, Bell, Pin, Sparkles } from 'lucide-react';
+import { ChevronDown, Menu, X, User, BookOpen, Users, Trophy, Image as ImageIcon, LogOut, Shield, Bookmark, CreditCard, Bell, Pin, Sparkles, PlusCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import AuthModal from './AuthModal';
 import api from '../../services/api';
 
 export default function Navbar() {
-  const { user, member, isAuthenticated, loading, openAuthModal, logout } = useAuth();
+  const { user, member, adminAccess, isAdmin, isAdminAuthenticated, isAuthenticated, loading, openAuthModal, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -64,7 +64,6 @@ export default function Navbar() {
 
   // Secondary links inside More dropdown
   const moreLinks = [
-    { name: 'Ideathon 2026', path: '/registration', desc: 'THINKTANK Ideathon 2026', icon: Sparkles, badge: 'Closed' },
     { name: 'Announcements', path: '#announcements', desc: 'Latest bulletins & updates', icon: Bell, isModalTrigger: true },
     { name: 'Gallery', path: '/gallery', desc: 'Photo & video highlights', icon: ImageIcon },
     { name: 'Resources', path: '/resources', desc: 'Study notes & roadmaps', icon: BookOpen },
@@ -118,7 +117,13 @@ export default function Navbar() {
   const displayPhoto = member?.photo || user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2f9e44&color=fff&bold=true`;
   // Consistent role: use the community role (e.g. 'Campus Mantri') rather than accountType
   const displayRole = member?.role || user?.role || 'Member';
-  const isSuperAdmin = user?.role === 'Super Admin' || user?.role === 'Admin';
+  const hasAdminPrivileges = Boolean(
+    isAdmin ||
+    isAdminAuthenticated ||
+    (adminAccess && adminAccess.adminRole) ||
+    user?.role === 'Super Admin' ||
+    user?.role === 'Admin'
+  );
 
   return (
     <header className="sticky top-0 z-50 glass-nav border-b border-[#30363d]/80 transition-all duration-200">
@@ -335,14 +340,23 @@ export default function Navbar() {
                       <CreditCard className="w-4 h-4 text-[#2f9e44]" /> Membership Card
                     </Link>
 
-                    {isSuperAdmin && (
-                      <Link
-                        to="/admin"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 font-bold border border-emerald-500/30 my-1 transition-colors"
-                      >
-                        <Shield className="w-4 h-4" /> Admin Console
-                      </Link>
+                    {hasAdminPrivileges && (
+                      <div className="border-t border-[#30363d]/80 my-1 pt-1 space-y-0.5">
+                        <Link
+                          to="/admin"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 font-bold border border-emerald-500/30 transition-colors"
+                        >
+                          <Shield className="w-4 h-4" /> Admin Panel
+                        </Link>
+                        <Link
+                          to="/admin/events?action=new"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-gray-300 hover:text-white hover:bg-[#21262d] font-semibold transition-colors"
+                        >
+                          <PlusCircle className="w-4 h-4 text-emerald-400" /> Create
+                        </Link>
+                      </div>
                     )}
 
                     <div className="border-t border-[#30363d] pt-1 mt-1">
@@ -499,6 +513,29 @@ export default function Navbar() {
                   </div>
                   <span className="text-[10px] text-[#2f9e44] font-bold flex-shrink-0">View →</span>
                 </Link>
+
+                {/* Mobile Admin Controls for Verified Admins Only */}
+                {hasAdminPrivileges && (
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[10px] uppercase font-bold text-emerald-400 font-mono tracking-wider px-2">
+                      Admin Controls
+                    </span>
+                    <Link
+                      to="/admin"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all"
+                    >
+                      <Shield className="w-4 h-4" /> Admin Panel
+                    </Link>
+                    <Link
+                      to="/admin/events?action=new"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-gray-300 hover:text-white hover:bg-[#161b22] transition-all"
+                    >
+                      <PlusCircle className="w-4 h-4 text-emerald-400" /> Create
+                    </Link>
+                  </div>
+                )}
 
                 {/* Divider + Sign Out */}
                 <div className="border-t border-[#30363d] pt-2">
